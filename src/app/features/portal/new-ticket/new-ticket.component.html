@@ -1,0 +1,95 @@
+<app-navbar [orgName]="auth.user()?.project_name ?? ''" role="user" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 640px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/portal/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <h1 class="page-title mb-0">Open a new ticket</h1>
+    </div>
+
+    <div class="form-card p-4 p-md-5">
+      <div class="error-alert" *ngIf="error()">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ error() }}
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #f="ngForm">
+        <div class="mb-4">
+  <label class="form-label-custom">Subject <span class="required-star">*</span></label>
+  <input type="text" class="form-input"
+    placeholder="Brief summary of the issue"
+    [(ngModel)]="form.subject" name="subject"
+    required minlength="5" maxlength="150" #subjectField="ngModel" />
+  <div class="field-error-inline" *ngIf="subjectField.dirty && form.subject.length > 0 && form.subject.length < 5">
+    Subject must be at least 5 characters
+  </div>
+</div>
+
+        <div class="mb-4">
+          <label class="form-label-custom">Category <span class="required-star">*</span></label>
+          <select class="form-input" [(ngModel)]="form.category" name="category" required>
+            <option value="hardware">🖥️ Hardware</option>
+            <option value="software">💾 Software</option>
+            <option value="network">🌐 Network</option>
+            <option value="access">🔑 Access</option>
+            <option value="email">✉️ Email</option>
+            <option value="printer">🖨️ Printer</option>
+            <option value="other">📋 Other</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-custom">Priority <span class="required-star">*</span></label>
+          <select class="form-input" [(ngModel)]="form.priority" name="priority" required>
+            <option value="low">🟢 Low — minor issue, no urgency</option>
+            <option value="medium">🟡 Medium — affects work but workaround exists</option>
+            <option value="high">🔴 High — blocking work</option>
+            <option value="critical">🚨 Critical — system down</option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+  <label class="form-label-custom">Description <span class="required-star">*</span></label>
+  <textarea class="form-input" rows="6"
+    placeholder="Describe the issue in detail. Include steps to reproduce, error messages, and what you expected to happen."
+    [(ngModel)]="form.description" name="description"
+    required minlength="10" #descField="ngModel"></textarea>
+  <div class="field-error-inline" *ngIf="descField.dirty && form.description.length > 0 && form.description.length < 10">
+    Description must be at least 10 characters
+  </div>
+</div>
+
+        <div class="mb-5">
+          <label class="form-label-custom">Attachments <span class="field-hint-inline">(images or videos, optional)</span></label>
+          <label class="file-drop">
+            <i class="bi bi-paperclip"></i>
+            <span>Click to attach images or videos</span>
+            <input type="file" accept="image/*,video/*" multiple hidden (change)="onFileSelect($event)" />
+          </label>
+          <div class="file-error" *ngIf="fileError()">{{ fileError() }}</div>
+
+          <div class="file-list" *ngIf="selectedFiles.length">
+            <div class="file-chip" *ngFor="let file of selectedFiles; let i = index">
+              <i class="bi" [class.bi-image]="file.type.startsWith('image/')" [class.bi-camera-video]="file.type.startsWith('video/')"></i>
+              <span class="file-name">{{ file.name }}</span>
+              <button type="button" class="file-remove" (click)="removeFile(i)">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn-submit"
+  [disabled]="loading() || f.invalid">
+            <span *ngIf="loading()" class="spinner-border spinner-border-sm"></span>
+            <i class="bi bi-send" *ngIf="!loading()"></i>
+            {{ loading() ? 'Submitting...' : 'Submit ticket' }}
+          </button>
+          <a routerLink="/portal/dashboard" class="btn-cancel">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,201 @@
+<!-- features/admin/projects/projects.component.html -->
+<app-navbar orgName="IT Team" [role]="'admin'" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 1100px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/admin/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h1 class="page-title mb-0">Projects</h1>
+        <p class="page-sub mb-0">Manage client organizations and their portal access</p>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div *ngIf="toast()" class="mb-3" [class.toast-success]="!toastError()" [class.toast-error]="toastError()">
+      <i class="bi me-2" [class.bi-check-circle]="!toastError()" [class.bi-x-circle]="toastError()"></i>{{ toast() }}
+    </div>
+
+    <!-- Create form -->
+    <div class="panel-card p-4 mb-4">
+      <div class="section-label mb-3">Create new project</div>
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <label class="field-label">Project name <span class="text-danger">*</span></label>
+          <input type="text" class="field-input" placeholder="e.g. معهد ابن خلدون" [(ngModel)]="newProject.name" />
+        </div>
+        <div class="col-12 col-md-2">
+          <label class="field-label">Code <span class="text-danger">*</span></label>
+          <input type="text" class="field-input" placeholder="e.g. BKI"
+            [(ngModel)]="newProject.code"
+            (input)="newProject.code = newProject.code.toUpperCase()" />
+          <div class="field-hint">A-Z, 0-9, dash only</div>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="field-label">Description</label>
+          <input type="text" class="field-input" placeholder="Optional" [(ngModel)]="newProject.description" />
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="field-label">Color</label>
+          <div class="color-picker-row">
+            <span *ngFor="let c of PRESET_COLORS" class="color-dot"
+              [style.background]="c"
+              [class.selected]="newProject.color === c"
+              (click)="newProject.color = c"></span>
+          </div>
+        </div>
+        <div class="col-12">
+          <button class="btn-primary" (click)="createProject()" [disabled]="saving() || !canCreate()">
+            <span *ngIf="saving()" class="spinner-border spinner-border-sm me-1"></span>
+            <i class="bi bi-plus-lg me-1" *ngIf="!saving()"></i>
+            {{ saving() ? 'Creating...' : 'Create project' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border" style="color:#4f46e5;"></div>
+    </div>
+
+    <!-- Projects grid -->
+    <div class="row g-3" *ngIf="!loading()">
+      <div *ngIf="projects().length === 0" class="col-12">
+        <div class="empty-state">
+          <i class="bi bi-folder"></i>
+          <p>No projects yet. Create your first one above.</p>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4" *ngFor="let project of projects()">
+        <div class="project-card" [class.archived]="project.status === 'archived'">
+          <div class="project-header" [style.background]="project.color">
+            <div class="project-code">{{ project.code }}</div>
+            <span class="project-status-pill" [class.archived]="project.status === 'archived'">
+              {{ project.status }}
+            </span>
+          </div>
+          <div class="project-body">
+            <h3 class="project-name">{{ project.name }}</h3>
+            <p class="project-desc" *ngIf="project.description">{{ project.description }}</p>
+            <div class="project-meta">
+              <span class="meta-chip text-muted">{{ project.created_at | date:'MMM y' }}</span>
+            </div>
+          </div>
+          <div class="project-actions">
+            <button class="action-btn" title="Add admin" (click)="openAddAdmin(project)">
+              <i class="bi bi-person-plus"></i>
+            </button>
+            <button class="action-btn" title="Edit" (click)="openEdit(project)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="action-btn" [title]="project.status === 'active' ? 'Archive' : 'Activate'"
+              (click)="toggleStatus(project)">
+              <i class="bi" [class.bi-archive]="project.status === 'active'"
+                [class.bi-arrow-counterclockwise]="project.status === 'archived'"></i>
+            </button>
+            <button class="action-btn danger" title="Delete" (click)="deleteTarget.set(project)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" *ngIf="editTarget()" (click)="editTarget.set(null)">
+  <div class="modal-box" style="max-width:520px;" (click)="$event.stopPropagation()">
+    <p class="modal-title">Edit project</p>
+    <div class="row g-3 mb-3">
+      <div class="col-8">
+        <label class="field-label">Name</label>
+        <input type="text" class="field-input" [(ngModel)]="editForm.name" />
+      </div>
+      <div class="col-4">
+        <label class="field-label">Code</label>
+        <input type="text" class="field-input" [(ngModel)]="editForm.code"
+          (input)="editForm.code = editForm.code.toUpperCase()" />
+      </div>
+      <div class="col-12">
+        <label class="field-label">Description</label>
+        <input type="text" class="field-input" [(ngModel)]="editForm.description" />
+      </div>
+      <div class="col-12">
+        <label class="field-label">Color</label>
+        <div class="color-picker-row">
+          <span *ngFor="let c of PRESET_COLORS" class="color-dot"
+            [style.background]="c"
+            [class.selected]="editForm.color === c"
+            (click)="editForm.color = c"></span>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-primary" (click)="saveEdit()" [disabled]="saving()">
+        <span *ngIf="saving()" class="spinner-border spinner-border-sm me-1"></span>Save
+      </button>
+      <button class="btn-secondary" (click)="editTarget.set(null)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add admin modal -->
+<div class="modal-overlay" *ngIf="addAdminTarget()" (click)="addAdminTarget.set(null)">
+  <div class="modal-box" style="max-width:480px;" (click)="$event.stopPropagation()">
+    <p class="modal-title">
+      Add admin to <strong>{{ addAdminTarget()?.name }}</strong>
+    </p>
+    <p class="field-hint mb-3">
+      This creates a login that can only manage <strong>{{ addAdminTarget()?.code }}</strong>'s tickets and chat.
+    </p>
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <label class="field-label">Full name</label>
+        <input type="text" class="field-input" placeholder="Optional" [(ngModel)]="addAdminForm.full_name" />
+      </div>
+      <div class="col-12">
+        <label class="field-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="field-input" placeholder="admin@example.com" [(ngModel)]="addAdminForm.email" />
+      </div>
+      <div class="col-12" style="position:relative;">
+        <label class="field-label">Password <span class="text-danger">*</span></label>
+        <input [type]="showAddAdminPassword ? 'text' : 'password'" class="field-input"
+          placeholder="At least 6 characters" [(ngModel)]="addAdminForm.password" style="padding-right:40px;" />
+        <button type="button" class="eye-toggle" style="top:32px;" (click)="showAddAdminPassword = !showAddAdminPassword">
+          <i class="bi" [class.bi-eye]="!showAddAdminPassword" [class.bi-eye-slash]="showAddAdminPassword"></i>
+        </button>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-primary" (click)="submitAddAdmin()" [disabled]="addingAdmin() || !canAddAdmin()">
+        <span *ngIf="addingAdmin()" class="spinner-border spinner-border-sm me-1"></span>
+        {{ addingAdmin() ? 'Adding...' : 'Add admin' }}
+      </button>
+      <button class="btn-secondary" (click)="addAdminTarget.set(null)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete modal -->
+<div class="modal-overlay" *ngIf="deleteTarget()" (click)="deleteTarget.set(null)">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <div class="danger-icon"><i class="bi bi-exclamation-triangle"></i></div>
+      <p class="modal-title mb-0">Delete project</p>
+    </div>
+    <div class="danger-box mb-4">
+      Deleting <strong>"{{ deleteTarget()?.name }}"</strong> will also delete all its tickets. This cannot be undone.
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-danger" (click)="confirmDelete()" [disabled]="deleting()">
+        <span *ngIf="deleting()" class="spinner-border spinner-border-sm me-1"></span>Delete
+      </button>
+      <button class="btn-secondary" (click)="deleteTarget.set(null)">Cancel</button>
+    </div>
+  </div>
+</div>

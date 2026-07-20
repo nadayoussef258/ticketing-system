@@ -1,0 +1,222 @@
+/* it-dashboard.component.css */
+
+.page-bg { background: var(--bg, #f5f6fa); }
+
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+}
+
+.page-sub {
+  font-size: 0.82rem;
+  color: var(--text-secondary, #6b7280);
+  margin-top: 2px;
+}
+
+.notif-count {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 99px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Admin button */
+.btn-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e4e6ef;
+  color: #4f46e5;
+  font-size: 0.83rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: all 0.15s;
+}
+.btn-admin:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+/* Stats */
+.stat-card {
+  background: #fff;
+  border: 1px solid #e4e6ef;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Filters */
+.filter-bar {
+  background: #fff;
+  border: 1px solid #e4e6ef;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  align-items: center;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+}
+.filter-select {
+  background: #f5f6fa;
+  border: 1px solid #e4e6ef;
+  color: #374151;
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+}
+.filter-select:focus {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+.filter-input {
+  background: #f5f6fa;
+  border: 1px solid #e4e6ef;
+  color: #374151;
+  font-size: 0.82rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  outline: none;
+  min-width: 200px;
+}
+.filter-input:focus {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+.filter-input::placeholder { color: #9ca3af; }
+
+/* Table */
+.tickets-table {
+  background: #fff;
+  border: 1px solid #e4e6ef;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.table {
+  color: #374151;
+}
+
+.table thead th {
+  background: #f9fafb;
+  border-bottom: 1px solid #e4e6ef !important;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  padding: 12px 16px;
+}
+
+.table tbody td {
+  border-color: #f3f4f6 !important;
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.ticket-row {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.ticket-row:hover td { background: #f5f6fb !important; }
+
+/* Unread open tickets — left accent line */
+.ticket-unread td:first-child {
+  border-left: 3px solid #4f46e5 !important;
+}
+
+/* New realtime tickets */
+.ticket-new td {
+  background: #fffbeb !important;
+}
+.ticket-new:hover td { background: #fef9e0 !important; }
+
+.ticket-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.88rem;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #4f46e5;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.new-flash {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.05em;
+  animation: flash 1s ease-in-out 3;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.org-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #f5f6fa;
+  border: 1px solid #e4e6ef;
+  color: #374151;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+.td-org, .td-assign, .td-date {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+.empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+.empty-state p { font-size: 0.88rem; margin: 0; }

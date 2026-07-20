@@ -1,0 +1,107 @@
+<!-- ticket-detail.component.html -->
+<app-navbar orgName="IT Team" role="admin" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 960px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/admin/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <h1 class="page-title mb-0">Ticket detail</h1>
+    </div>
+
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border" style="color:#4f46e5;"></div>
+    </div>
+
+    <ng-container *ngIf="!loading() && ticket()">
+      <div class="row g-3">
+
+        <div class="col-lg-8">
+          <div class="info-card p-4 mb-3">
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+              <h2 class="ticket-heading mb-0">{{ ticket()!.subject }}</h2>
+              <span class="ticket-date-label">{{ ticket()!.created_at | date:'MMM d, y' }}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <app-priority-badge [priority]="ticket()!.priority" />
+              <app-status-badge [status]="ticket()!.status" />
+              <span class="org-chip"><i class="bi bi-kanban me-1"></i>{{ ticket()!.projects?.name }}</span>
+            </div>
+            <p class="ticket-desc">{{ ticket()!.description }}</p>
+          </div>
+
+          <div class="info-card p-4 mb-3">
+            <div class="section-label">Conversation</div>
+
+            <div *ngIf="comments().length === 0" class="empty-replies">
+              <i class="bi bi-chat-square-text"></i>
+              <p>No replies yet.</p>
+            </div>
+
+            <div *ngFor="let c of comments()" class="reply-item mb-3"
+                 [class.reply-it]="c.is_agent_reply"
+                 [class.reply-client]="!c.is_agent_reply">
+              <div class="reply-bubble">
+                <div class="reply-sender">
+                  {{ c.is_agent_reply ? '🛡️ ' + c.author_name : '👤 ' + c.author_name }}
+                  <span class="reply-time">{{ c.created_at | date:'MMM d · h:mm a' }}</span>
+                </div>
+                <p class="reply-text">{{ c.content }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card p-4">
+            <div class="section-label">Reply as IT</div>
+            <textarea class="reply-input mb-3" rows="4" placeholder="Type your response..." [(ngModel)]="replyText"></textarea>
+            <button class="btn-send" (click)="sendReply()" [disabled]="sending() || !replyText.trim()">
+              <span *ngIf="sending()" class="spinner-border spinner-border-sm"></span>
+              <i class="bi bi-send" *ngIf="!sending()"></i>
+              {{ sending() ? 'Sending...' : 'Send reply' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="info-card p-4">
+            <div class="section-label">Manage ticket</div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Status</label>
+              <select class="manage-select" [(ngModel)]="editStatus" (change)="updateField('status', editStatus)">
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Priority</label>
+              <select class="manage-select" [(ngModel)]="editPriority" (change)="updateField('priority', editPriority)">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Assign to</label>
+              <select class="manage-select" [(ngModel)]="editAssigned" (change)="updateField('assigned_to_id', editAssigned || null)">
+                <option value="">Unassigned</option>
+                <option *ngFor="let m of teamMembers()" [value]="m.id">{{ m.full_name }}</option>
+              </select>
+            </div>
+
+            <div *ngIf="saveMsg()" [class.save-success]="!saveError()" [class.save-error]="saveError()">
+              <i class="bi me-1" [class.bi-check-circle]="!saveError()" [class.bi-x-circle]="saveError()"></i>
+              {{ saveMsg() }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+  </div>
+</div>

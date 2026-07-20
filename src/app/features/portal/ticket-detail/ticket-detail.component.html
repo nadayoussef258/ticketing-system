@@ -1,0 +1,66 @@
+<app-navbar [orgName]="auth.user()?.project_name ?? ''" role="user" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 760px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/portal/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <h1 class="page-title mb-0">Ticket detail</h1>
+    </div>
+
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border" style="color:#4f46e5;"></div>
+    </div>
+
+    <ng-container *ngIf="!loading() && ticket()">
+
+      <!-- Ticket info -->
+      <div class="info-card p-4 mb-3">
+        <h2 class="ticket-heading mb-3">{{ ticket()!.subject }}</h2>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <app-priority-badge [priority]="ticket()!.priority" />
+          <app-status-badge [status]="ticket()!.status" />
+          <span class="ticket-date-label">{{ ticket()!.created_at | date:'MMM d, y · h:mm a' }}</span>
+        </div>
+        <p class="ticket-desc">{{ ticket()!.description }}</p>
+      </div>
+
+      <!-- Conversation -->
+      <div class="info-card p-4 mb-3">
+        <div class="section-label">Conversation</div>
+
+        <div *ngIf="comments().length === 0" class="empty-replies">
+          <i class="bi bi-chat-square-dots"></i>
+          <p>No replies yet — the IT team will respond shortly.</p>
+        </div>
+
+        <div *ngFor="let comment of comments()" class="reply-item mb-3"
+          [class.reply-it]="comment.is_agent_reply"
+          [class.reply-client]="!comment.is_agent_reply">
+          <div class="reply-bubble">
+            <div class="reply-sender">
+              {{ comment.is_agent_reply ? '🛡️ IT Support' : '👤 You' }}
+              <span class="reply-time">{{ comment.created_at | date:'MMM d · h:mm a' }}</span>
+            </div>
+            <p class="reply-text">{{ comment.content }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reply form -->
+      <div class="info-card p-4"
+        *ngIf="ticket()!.status !== 'closed' && ticket()!.status !== 'resolved'">
+        <div class="section-label">Add a reply</div>
+        <textarea class="reply-input mb-3" rows="3"
+          placeholder="Type your message..."
+          [(ngModel)]="replyText"></textarea>
+        <button class="btn-send" (click)="sendReply()" [disabled]="sending() || !replyText.trim()">
+          <span *ngIf="sending()" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-send" *ngIf="!sending()"></i>
+          {{ sending() ? 'Sending...' : 'Send reply' }}
+        </button>
+      </div>
+
+    </ng-container>
+  </div>
+</div>

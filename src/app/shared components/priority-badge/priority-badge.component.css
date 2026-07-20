@@ -1,0 +1,10 @@
+.priority-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.priority-low      { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.priority-medium   { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+.priority-high     { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+.priority-critical { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; font-weight: 700; }

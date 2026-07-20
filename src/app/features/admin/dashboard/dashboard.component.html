@@ -1,0 +1,100 @@
+<!-- dashboard.component.html -->
+<app-navbar orgName="IT Team" role="admin" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 1200px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h1 class="page-title mb-0">Support Tickets</h1>
+        <p class="page-sub mb-0">
+          {{ filtered().length }} ticket{{ filtered().length !== 1 ? 's' : '' }}
+          <span *ngIf="newCount() > 0" class="notif-count ms-2">
+            <i class="bi bi-bell-fill me-1"></i>{{ newCount() }} new
+          </span>
+        </p>
+      </div>
+      <a routerLink="/admin/team" class="btn-admin">
+        <i class="bi bi-gear me-1"></i>Admin
+      </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3" *ngFor="let stat of stats()">
+        <div class="stat-card">
+          <div class="stat-label">{{ stat.label }}</div>
+          <div class="stat-value" [style.color]="stat.color">{{ stat.count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-bar d-flex flex-wrap gap-2 mb-4">
+      <div class="filter-group">
+        <i class="bi bi-funnel text-muted me-1"></i>
+        <select class="filter-select" [(ngModel)]="filterStatus">
+          <option value="all">All status</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <select class="filter-select" [(ngModel)]="filterPriority">
+        <option value="all">All priorities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <input type="text" class="filter-input" placeholder="Search tickets..." [(ngModel)]="search" />
+    </div>
+
+    <div class="text-center py-5" *ngIf="loading()">
+      <div class="spinner-border text-primary"></div>
+      <p class="text-muted mt-2 small">Loading tickets...</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading() && filtered().length === 0">
+      <i class="bi bi-inbox"></i>
+      <p>No tickets match your filters.</p>
+    </div>
+
+    <div class="tickets-table" *ngIf="!loading() && filtered().length > 0">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>Project</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ticket of filtered()"
+              [routerLink]="['/admin/ticket', ticket.id]"
+              class="ticket-row"
+              [class.ticket-new]="isNew(ticket)"
+              [class.ticket-unread]="isNew(ticket)">
+            <td class="td-title">
+              <div class="d-flex align-items-center gap-2">
+                <span class="unread-dot" *ngIf="isNew(ticket)"></span>
+                <span class="ticket-title">{{ ticket.subject }}</span>
+                <span *ngIf="isNew(ticket)" class="new-flash">NEW</span>
+              </div>
+            </td>
+            <td class="td-org">
+              <span class="org-chip"><i class="bi bi-kanban me-1"></i>{{ ticket.projects?.name ?? '—' }}</span>
+            </td>
+            <td><app-priority-badge [priority]="ticket.priority" /></td>
+            <td><app-status-badge [status]="ticket.status" /></td>
+            <td class="td-assign">{{ ticket.assignee?.full_name ?? 'Unassigned' }}</td>
+            <td class="td-date">{{ ticket.created_at | date:'MMM d' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

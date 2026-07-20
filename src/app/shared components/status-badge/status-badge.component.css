@@ -1,0 +1,11 @@
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.status-open        { background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; }
+.status-in_progress { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+.status-resolved    { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.status-closed      { background: #f9fafb; color: #9ca3af; border: 1px solid #e5e7eb; }
+ 

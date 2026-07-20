@@ -1,0 +1,166 @@
+<!-- features/admin/team/team.component.html -->
+<app-navbar orgName="IT Team" role="admin" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 1000px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/admin/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h1 class="page-title mb-0">Team Management</h1>
+        <p class="page-sub mb-0">Manage IT team members and their access</p>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div *ngIf="toast()" class="mb-3" [class.toast-success]="!toastError()" [class.toast-error]="toastError()">
+      <i class="bi me-2" [class.bi-check-circle]="!toastError()" [class.bi-x-circle]="toastError()"></i>{{ toast() }}
+    </div>
+
+    <!-- Add member form -->
+    <div class="panel-card p-4 mb-4">
+      <div class="section-label mb-3">Add new team member</div>
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="field-label">Full name</label>
+          <input type="text" class="field-input" placeholder="Ahmed Hassan" [(ngModel)]="newUser.full_name" />
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="field-label">Email</label>
+          <input type="email" class="field-input" placeholder="ahmed@company.com" [(ngModel)]="newUser.email" />
+        </div>
+        <div class="col-12 col-md-2">
+          <label class="field-label">Password</label>
+          <div style="position:relative;">
+            <input [type]="showPassword ? 'text' : 'password'" class="field-input"
+              placeholder="Min 6 chars" [(ngModel)]="newUser.password" style="padding-right:36px;" />
+            <button type="button" class="eye-toggle" (click)="showPassword = !showPassword">
+              <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-12 col-md-2">
+          <label class="field-label">Role</label>
+          <select class="field-input" [(ngModel)]="newUser.role">
+            <option value="admin">Admin (IT)</option>
+            <option value="user">User (Client)</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2">
+          <button class="btn-primary w-100" (click)="createUser()" [disabled]="saving() || !canCreate()">
+            <span *ngIf="saving()" class="spinner-border spinner-border-sm me-1"></span>
+            <i class="bi bi-person-plus me-1" *ngIf="!saving()"></i>
+            {{ saving() ? 'Adding...' : 'Add member' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border" style="color:#4f46e5;"></div>
+    </div>
+
+    <!-- Team table -->
+    <div class="panel-card" *ngIf="!loading()">
+      <div class="p-4 border-bottom-light">
+        <div class="section-label mb-0">Team members ({{ users().length }})</div>
+      </div>
+      <table class="table panel-table mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Added</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users()">
+            <td class="ps-4">
+              <div class="member-avatar-row">
+                <div class="member-avatar">{{ u.full_name[0]?.toUpperCase() }}</div>
+                <span class="fw-semibold" style="color:#111827;">{{ u.full_name }}</span>
+              </div>
+            </td>
+            <td style="color:#6b7280; font-size:0.83rem;">{{ u.email }}</td>
+            <td>
+              <span [class.badge-admin]="u.user_role === 'admin'" [class.badge-user]="u.user_role === 'user'">
+                <i class="bi me-1" [class.bi-shield-check]="u.user_role === 'admin'" [class.bi-person]="u.user_role === 'user'"></i>
+                {{ u.user_role === 'admin' ? 'Admin' : 'User' }}
+              </span>
+            </td>
+            <td>
+              <span [class.badge-active]="!u.banned_until" [class.badge-inactive]="!!u.banned_until">
+                {{ u.banned_until ? 'Disabled' : 'Active' }}
+              </span>
+            </td>
+            <td style="color:#9ca3af; font-size:0.78rem;">{{ u.created_at | date:'MMM d, y' }}</td>
+            <td class="text-end pe-4">
+              <button class="action-btn" title="Reset password" (click)="openResetModal(u)">
+                <i class="bi bi-key"></i>
+              </button>
+              <button class="action-btn" [title]="u.banned_until ? 'Enable' : 'Disable'" (click)="toggleActive(u)">
+                <i class="bi" [class.bi-toggle-on]="!u.banned_until" [class.bi-toggle-off]="!!u.banned_until"
+                  [style.color]="!u.banned_until ? '#059669' : '#9ca3af'"></i>
+              </button>
+              <button class="action-btn danger" title="Delete" (click)="deleteTarget.set(u)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="users().length === 0">
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="bi bi-people" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+              No team members yet.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- Reset password modal -->
+<div class="modal-overlay" *ngIf="resetTarget()" (click)="resetTarget.set(null)">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <p class="modal-title">Reset password</p>
+    <p class="modal-sub"><i class="bi bi-person me-1"></i>{{ resetTarget()?.full_name }} — {{ resetTarget()?.email }}</p>
+    <div style="position:relative;">
+      <input [type]="showNewPassword ? 'text' : 'password'" class="field-input mb-3"
+        placeholder="New password (min 6 characters)"
+        [(ngModel)]="newPassword" (keyup.enter)="savePassword()" style="padding-right:40px;" />
+      <button type="button" class="eye-toggle" (click)="showNewPassword = !showNewPassword">
+        <i class="bi" [class.bi-eye]="!showNewPassword" [class.bi-eye-slash]="showNewPassword"></i>
+      </button>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-primary" (click)="savePassword()" [disabled]="newPassword.length < 6 || savingPassword()">
+        <span *ngIf="savingPassword()" class="spinner-border spinner-border-sm me-1"></span>Save
+      </button>
+      <button class="btn-secondary" (click)="resetTarget.set(null)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal-overlay" *ngIf="deleteTarget()" (click)="deleteTarget.set(null)">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <div class="danger-icon"><i class="bi bi-exclamation-triangle"></i></div>
+      <p class="modal-title mb-0">Remove team member</p>
+    </div>
+    <div class="danger-box mb-4">
+      <strong>{{ deleteTarget()?.full_name }}</strong> ({{ deleteTarget()?.email }}) will be permanently deleted.
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-danger" (click)="confirmDelete()" [disabled]="deleting()">
+        <span *ngIf="deleting()" class="spinner-border spinner-border-sm me-1"></span>Remove
+      </button>
+      <button class="btn-secondary" (click)="deleteTarget.set(null)">Cancel</button>
+    </div>
+  </div>
+</div>
