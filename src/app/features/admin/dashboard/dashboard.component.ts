@@ -61,8 +61,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     return this.newTicketIds().has(ticket.id);
   }
 
-  constructor(private auth: AuthService, private ticketSvc: TicketService) {}
-
+constructor(public auth: AuthService, private ticketSvc: TicketService) {}
   async ngOnInit() {
     try {
       const data = await this.ticketSvc.getAllTickets();

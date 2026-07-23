@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf, DatePipe } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { Ticket } from '../../../core/models';
 import { NavbarComponent } from '../../../shared components/navbar/navbar.component';
 import { PriorityBadgeComponent } from '../../../shared components/priority-badge/priority-badge.component';
@@ -14,13 +15,17 @@ import { StatusBadgeComponent } from '../../../shared components/status-badge/st
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
-export class PortalDashboardComponent implements OnInit, OnDestroy {
+export class PortalDashboardComponent implements OnInit {
   tickets = signal<Ticket[]>([]);
   loading = signal(true);
 
-  ticketsWithNewReply = signal(new Set<string>());
-
-  private channels: any[] = [];
+  // مشتقة مباشرة من جدول notifications بدل channels منفصلة لكل تذكرة
+  ticketsWithNewReply = computed(() => {
+    const ids = this.notificationSvc.notifications()
+      .filter(n => !n.is_read && n.type === 'new_comment' && n.ticket_id)
+      .map(n => n.ticket_id as string);
+    return new Set(ids);
+  });
 
   get stats() {
     const t = this.tickets();
@@ -32,33 +37,19 @@ export class PortalDashboardComponent implements OnInit, OnDestroy {
     ];
   }
 
-  constructor(public auth: AuthService, private ticketSvc: TicketService) {}
+  constructor(
+    public auth: AuthService,
+    private ticketSvc: TicketService,
+    public notificationSvc: NotificationService,
+  ) {}
 
   async ngOnInit() {
     try {
-      const data = await this.ticketSvc.getMyTickets();
-      this.tickets.set(data);
-      this.subscribeToComments(data);
+      this.tickets.set(await this.ticketSvc.getMyTickets());
     } finally {
       this.loading.set(false);
     }
-  }
-
-  private subscribeToComments(tickets: Ticket[]) {
-    const currentUserId = this.auth.getCurrentUserId();
-
-    for (const ticket of tickets) {
-      const ch = this.ticketSvc.subscribeToComments(ticket.id, (comment) => {
-        // Only notify if it's an IT reply, not the client's own message
-        if (comment.is_agent_reply && comment.author_id !== currentUserId) {
-          this.ticketsWithNewReply.update(s => new Set([...s, ticket.id]));
-        }
-      });
-      this.channels.push(ch);
-    }
-  }
-
-  ngOnDestroy() {
-    this.channels.forEach(ch => ch?.unsubscribe());
+    // نتأكد إن الإشعارات محمّلة للكلاينت حتى لو الجرس مخفي عنده
+    await this.notificationSvc.init();
   }
 }

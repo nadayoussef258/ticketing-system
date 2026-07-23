@@ -80,12 +80,13 @@ export class TicketService {
     return (data ?? []) as TicketComment[];
   }
 
-  async addComment(
+ async addComment(
     ticketId: string,
     content: string,
     isAgentReply: boolean,
     authorName: string,
     authorId: string,
+    attachments: string[] = [],
   ): Promise<TicketComment> {
     const { data, error } = await this.supabase.client
       .from('ticket_comments')
@@ -95,6 +96,7 @@ export class TicketService {
         is_agent_reply: isAgentReply,
         author_name: authorName,
         author_id: authorId,
+        attachments,
       })
       .select()
       .single();

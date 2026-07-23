@@ -21,23 +21,31 @@ export class NotificationService {
 
   constructor(private supabase: SupabaseService, private auth: AuthService) {}
 
-  async init() {
-    const userId = this.auth.getCurrentUserId();
-    if (!userId) return;
+async init() {
+  const userId = this.auth.getCurrentUserId();
+  if (!userId) { this.reset(); return; }
 
-    await this.loadNotifications(userId);
+  this.channel?.unsubscribe();   // امنع تراكم أكتر من subscription
+  this.reset();                  // امسح بيانات أي يوزر سابق قبل ما تحمّل الجديد
 
-    this.channel = this.supabase.client
-      .channel(`notifications-${userId}`)
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-        (payload) => {
-          const n = payload.new as AppNotification;
-          this.notifications.update(list => [n, ...list]);
-          this.unreadCount.update(c => c + 1);
-        })
-      .subscribe();
-  }
+  await this.loadNotifications(userId);
+
+  this.channel = this.supabase.client
+    .channel(`notifications-${userId}`)
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+      (payload) => {
+        const n = payload.new as AppNotification;
+        this.notifications.update(list => [n, ...list]);
+        this.unreadCount.update(c => c + 1);
+      })
+    .subscribe();
+}
+
+reset() {
+  this.notifications.set([]);
+  this.unreadCount.set(0);
+}
 
   private async loadNotifications(userId: string) {
     const { data, error } = await this.supabase.client
@@ -67,5 +75,20 @@ export class NotificationService {
 
   destroy() {
     this.channel?.unsubscribe();
+  }
+  async markTicketNotificationsRead(ticketId: string) {
+    const userId = this.auth.getCurrentUserId();
+    if (!userId) return;
+    await this.supabase.client
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('ticket_id', ticketId)
+      .eq('is_read', false);
+
+    this.notifications.update(list =>
+      list.map(n => n.ticket_id === ticketId ? { ...n, is_read: true } : n)
+    );
+    this.unreadCount.set(this.notifications().filter(n => !n.is_read).length);
   }
 }

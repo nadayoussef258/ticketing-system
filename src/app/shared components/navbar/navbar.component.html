@@ -18,6 +18,9 @@
       <a routerLink="/admin/team" routerLinkActive="active" class="nav-link-item">
         <i class="bi bi-people me-1"></i>Team
       </a>
+      <a routerLink="/admin/logs" routerLinkActive="active" class="nav-link-item">
+  <i class="bi bi-clock-history me-1"></i>Logs
+</a>
     </div>
   </div>
 
@@ -27,7 +30,7 @@
     </span>
 
     <!-- Notification bell -->
-    <div class="notif-wrap">
+      <div class="notif-wrap" *ngIf="isAdminRole">
       <button class="btn-bell" (click)="toggleDropdown()">
         <i class="bi bi-bell"></i>
         <span class="notif-badge" *ngIf="notificationSvc.unreadCount() > 0">

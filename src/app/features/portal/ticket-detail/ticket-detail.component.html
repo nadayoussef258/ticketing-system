@@ -14,7 +14,6 @@
 
     <ng-container *ngIf="!loading() && ticket()">
 
-      <!-- Ticket info -->
       <div class="info-card p-4 mb-3">
         <h2 class="ticket-heading mb-3">{{ ticket()!.subject }}</h2>
         <div class="d-flex flex-wrap gap-2 mb-3">
@@ -25,7 +24,6 @@
         <p class="ticket-desc">{{ ticket()!.description }}</p>
       </div>
 
-      <!-- Conversation -->
       <div class="info-card p-4 mb-3">
         <div class="section-label">Conversation</div>
 
@@ -43,17 +41,37 @@
               <span class="reply-time">{{ comment.created_at | date:'MMM d · h:mm a' }}</span>
             </div>
             <p class="reply-text">{{ comment.content }}</p>
+            <div *ngIf="comment.attachments?.length" class="reply-attachments mt-2">
+              <a *ngFor="let url of comment.attachments" [href]="url" target="_blank" class="attachment-thumb">
+                <i class="bi bi-paperclip"></i> Attachment
+              </a>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Reply form -->
       <div class="info-card p-4"
         *ngIf="ticket()!.status !== 'closed' && ticket()!.status !== 'resolved'">
         <div class="section-label">Add a reply</div>
+
         <textarea class="reply-input mb-3" rows="3"
           placeholder="Type your message..."
           [(ngModel)]="replyText"></textarea>
+
+        <label class="file-drop mb-2">
+          <i class="bi bi-paperclip"></i>
+          <span>Attach images or videos</span>
+          <input type="file" accept="image/*,video/*" multiple hidden (change)="onReplyFileSelect($event)" />
+        </label>
+        <div class="file-error" *ngIf="replyFileError()">{{ replyFileError() }}</div>
+        <div class="file-list mb-3" *ngIf="replyFiles.length">
+          <div class="file-chip" *ngFor="let f of replyFiles; let i = index">
+            <i class="bi" [class.bi-image]="f.type.startsWith('image/')" [class.bi-camera-video]="f.type.startsWith('video/')"></i>
+            <span class="file-name">{{ f.name }}</span>
+            <button type="button" class="file-remove" (click)="removeReplyFile(i)"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+
         <button class="btn-send" (click)="sendReply()" [disabled]="sending() || !replyText.trim()">
           <span *ngIf="sending()" class="spinner-border spinner-border-sm"></span>
           <i class="bi bi-send" *ngIf="!sending()"></i>

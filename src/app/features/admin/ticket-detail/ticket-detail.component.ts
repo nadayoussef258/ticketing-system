@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { TeamService } from '../../../core/services/team.service';
 import { Ticket, TicketComment, UserProfile } from '../../../core/models';
+import { SupabaseService } from '../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-ticket-detail',
@@ -30,7 +31,8 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   editAssigned = '';
   saveMsg = signal('');
   saveError = signal(false);
-
+  replyFiles: File[] = [];
+  replyFileError = signal('');
   private ticketChannel: any;
   private commentsChannel: any;
 
@@ -38,6 +40,7 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     private ticketSvc: TicketService,
     private teamSvc: TeamService,
+    private supabase: SupabaseService,  
     private route: ActivatedRoute
   ) {}
 
@@ -78,6 +81,53 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
     this.commentsChannel?.unsubscribe();
   }
 
+  onReplyFileSelect(event: Event) {
+    this.replyFileError.set('');
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    for (const file of files) {
+      const isAccepted = file.type.startsWith('image/') || file.type.startsWith('video/');
+      if (!isAccepted) { this.replyFileError.set(`"${file.name}" ليس صورة أو فيديو`); continue; }
+      if (file.size > 15 * 1024 * 1024) { this.replyFileError.set(`"${file.name}" أكبر من 15MB`); continue; }
+      this.replyFiles.push(file);
+    }
+    input.value = '';
+  }
+
+  removeReplyFile(i: number) {
+    this.replyFiles.splice(i, 1);
+  }
+
+  private async uploadReplyAttachments(ticketId: string): Promise<string[]> {
+    const urls: string[] = [];
+    for (const file of this.replyFiles) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      const path = `${ticketId}/${Date.now()}-${safeName}`;
+      const { error } = await this.supabase.client.storage.from('ticket-attachments').upload(path, file);
+      if (error) throw error;
+      const { data } = this.supabase.client.storage.from('ticket-attachments').getPublicUrl(path);
+      urls.push(data.publicUrl);
+    }
+    return urls;
+  }
+
+  async sendReply() {
+    const user = this.auth.user();
+    const ticket = this.ticket();
+    if (!user || !ticket || !this.replyText.trim()) return;
+    this.sending.set(true);
+    try {
+      const attachments = this.replyFiles.length ? await this.uploadReplyAttachments(ticket.id) : [];
+      const comment = await this.ticketSvc.addComment(
+        ticket.id, this.replyText.trim(), true, user.full_name, user.id, attachments
+      );
+      this.comments.update(c => [...c, comment]);
+      this.replyText = '';
+      this.replyFiles = [];
+    } finally {
+      this.sending.set(false);
+    }
+  }
   async updateField(field: 'status' | 'priority' | 'assigned_to_id', value: any) {
     const ticket = this.ticket();
     if (!ticket) return;
@@ -87,22 +137,6 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
       this.showSaveMsg('Saved successfully', false);
     } catch {
       this.showSaveMsg('Failed to save', true);
-    }
-  }
-
-  async sendReply() {
-    const user = this.auth.user();
-    const ticket = this.ticket();
-    if (!user || !ticket || !this.replyText.trim()) return;
-    this.sending.set(true);
-    try {
-      const comment = await this.ticketSvc.addComment(
-        ticket.id, this.replyText.trim(), true, user.full_name, user.id
-      );
-      this.comments.update(c => [...c, comment]);
-      this.replyText = '';
-    } finally {
-      this.sending.set(false);
     }
   }
 

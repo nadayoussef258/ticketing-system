@@ -26,11 +26,11 @@ export class AuthService {
     if (data.user) await this.loadUserProfile(data.user.id);
   }
 
-  async logout(): Promise<void> {
-    await this.supabase.auth.signOut();
-    this._user.set(null);
-    this.router.navigate(['/auth/login']);
-  }
+async logout(): Promise<void> {
+  await this.supabase.auth.signOut();
+  this._user.set(null);
+  this.router.navigate(['/auth/login']);
+}
 
   private async loadUserProfile(userId: string): Promise<void> {
     // Load from user_profiles table, joined with the linked project (if any)
