@@ -31,23 +31,23 @@
     <div class="filter-bar d-flex flex-wrap gap-2 mb-4">
       <div class="filter-group">
         <i class="bi bi-funnel text-muted me-1"></i>
-        <select class="filter-select" [(ngModel)]="filterStatus">
-          <option value="all">All status</option>
-          <option value="open">Open</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </select>
+        <select class="filter-select" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+  <option value="all">All status</option>
+  <option value="open">Open</option>
+  <option value="in_progress">In Progress</option>
+  <option value="resolved">Resolved</option>
+  <option value="closed">Closed</option>
+</select>
       </div>
-      <select class="filter-select" [(ngModel)]="filterPriority">
-        <option value="all">All priorities</option>
-        <option value="critical">Critical</option>
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-        <option value="low">Low</option>
-      </select>
-      <input type="text" class="filter-input" placeholder="Search tickets..." [(ngModel)]="search" />
-    </div>
+     <select class="filter-select" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)">
+  <option value="all">All priorities</option>
+  <option value="critical">Critical</option>
+  <option value="high">High</option>
+  <option value="medium">Medium</option>
+  <option value="low">Low</option>
+</select>
+<input type="text" class="filter-input" placeholder="Search tickets..."
+  [ngModel]="search()" (ngModelChange)="search.set($event)" />    </div>
 
     <div class="text-center py-5" *ngIf="loading()">
       <div class="spinner-border text-primary"></div>

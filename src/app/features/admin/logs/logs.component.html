@@ -1,8 +1,7 @@
 <app-navbar orgName="IT Team" role="admin" />
 
 <div class="page-bg min-vh-100">
-  <div class="container-fluid px-4 py-4" style="max-width: 1000px; margin: 0 auto;">
-
+  <div class="container-fluid px-4 py-4" style="max-width: 1000px; margin: 0 auto">
     <div class="d-flex align-items-center gap-3 mb-4">
       <a routerLink="/admin/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
       <div>
@@ -12,31 +11,58 @@
     </div>
 
     <div *ngIf="loading()" class="text-center py-5">
-      <div class="spinner-border" style="color:#4f46e5;"></div>
+      <div class="spinner-border" style="color: #4f46e5"></div>
     </div>
 
     <div class="panel-card" *ngIf="!loading()">
-      <div *ngFor="let l of logs()" class="log-row">
-        <div class="log-icon"><i class="bi" [ngClass]="icon(l.action)"></i></div>
-        <div class="log-body">
-          <div class="log-title">
-            <strong>{{ l.actor_name ?? 'System' }}</strong> {{ label(l.action) }}
-            <span *ngIf="l.details?.['ticket_number']" class="log-target">#{{ l.details?.['ticket_number'] }}</span>
+      <div class="logs-scroll">
+        <div *ngFor="let l of logs()" class="log-row">
+          <div class="log-icon"><i class="bi" [ngClass]="icon(l.action)"></i></div>
+          <div class="log-body">
+            <div class="log-title">
+              <strong>{{ l.actor_name ?? 'System' }}</strong> {{ label(l.action) }}
+              <span *ngIf="l.details?.['ticket_number']" class="log-target"
+                >#{{ l.details?.['ticket_number'] }}</span
+              >
+            </div>
+            <div class="log-details" *ngIf="l.details?.['from'] && l.details?.['to']">
+              {{ l.details?.['from'] }} → {{ l.details?.['to'] }}
+            </div>
+            <div class="log-details" *ngIf="l.details?.['preview']">
+              "{{ l.details?.['preview'] }}"
+            </div>
+            <div class="log-details" *ngIf="l.details?.['target_name']">
+              Target: {{ l.details?.['target_name'] }}
+            </div>
+           <div class="log-attachments mt-1" *ngIf="attachmentsOf(l).length">
+  <a
+    *ngFor="let url of attachmentsOf(l)"
+    [href]="url"
+    target="_blank"
+    class="log-attachment-link"
+  >
+    <ng-container *ngIf="isImageUrl(url); else fileIcon">
+      <img [src]="url" class="log-attachment-thumb" alt="attachment" />
+    </ng-container>
+    <ng-template #fileIcon> <i class="bi bi-paperclip"></i> Attachment </ng-template>
+  </a>
+</div>
           </div>
-          <div class="log-details" *ngIf="l.details?.['from'] && l.details?.['to']">
-            {{ l.details?.['from'] }} → {{ l.details?.['to'] }}
-          </div>
-          <div class="log-details" *ngIf="l.details?.['preview']">"{{ l.details?.['preview'] }}"</div>
-          <div class="log-details" *ngIf="l.details?.['target_name']">Target: {{ l.details?.['target_name'] }}</div>
+          <div class="log-time">{{ l.created_at | date: 'MMM d · h:mm a' }}</div>
         </div>
-        <div class="log-time">{{ l.created_at | date:'MMM d · h:mm a' }}</div>
+
+        <div *ngIf="logs().length === 0" class="text-center py-5 text-muted">
+          <i class="bi bi-clock-history" style="font-size: 2rem; display: block; margin-bottom: 8px"></i>
+          No activity yet.
+        </div>
       </div>
 
-      <div *ngIf="logs().length === 0" class="text-center py-5 text-muted">
-        <i class="bi bi-clock-history" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
-        No activity yet.
+      <div class="load-more-bar" *ngIf="hasMore() && !loading()">
+        <button class="btn-load-more" (click)="loadMore()" [disabled]="loadingMore()">
+          <span *ngIf="loadingMore()" class="spinner-border spinner-border-sm me-2"></span>
+          {{ loadingMore() ? 'جاري التحميل...' : 'تحميل المزيد' }}
+        </button>
       </div>
     </div>
-
   </div>
 </div>

@@ -82,17 +82,20 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   }
 
   onReplyFileSelect(event: Event) {
-    this.replyFileError.set('');
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
-    for (const file of files) {
-      const isAccepted = file.type.startsWith('image/') || file.type.startsWith('video/');
-      if (!isAccepted) { this.replyFileError.set(`"${file.name}" ليس صورة أو فيديو`); continue; }
-      if (file.size > 15 * 1024 * 1024) { this.replyFileError.set(`"${file.name}" أكبر من 15MB`); continue; }
-      this.replyFiles.push(file);
-    }
-    input.value = '';
+  this.replyFileError.set('');
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files ?? []);
+  for (const file of files) {
+    const isAccepted =
+      file.type.startsWith('image/') ||
+      file.type.startsWith('video/') ||
+      file.type === 'application/pdf';
+    if (!isAccepted) { this.replyFileError.set(`"${file.name}" نوع غير مدعوم (صور/فيديو/PDF فقط)`); continue; }
+    if (file.size > 15 * 1024 * 1024) { this.replyFileError.set(`"${file.name}" أكبر من 15MB`); continue; }
+    this.replyFiles.push(file);
   }
+  input.value = '';
+}
 
   removeReplyFile(i: number) {
     this.replyFiles.splice(i, 1);

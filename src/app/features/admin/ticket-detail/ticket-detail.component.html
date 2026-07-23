@@ -60,18 +60,21 @@
   <div class="section-label">Reply as IT</div>
   <textarea class="reply-input mb-3" rows="4" placeholder="Type your response..." [(ngModel)]="replyText"></textarea>
 
-  <label class="file-drop mb-2">
-    <i class="bi bi-paperclip"></i>
-    <span>Attach images or videos</span>
-    <input type="file" accept="image/*,video/*" multiple hidden (change)="onReplyFileSelect($event)" />
-  </label>
+ <label class="file-drop mb-2">
+  <i class="bi bi-paperclip"></i>
+  <span>Attach images, videos, or PDF</span>
+  <input type="file" accept="image/*,video/*,application/pdf" multiple hidden (change)="onReplyFileSelect($event)" />
+</label>
   <div class="file-error" *ngIf="replyFileError()">{{ replyFileError() }}</div>
   <div class="file-list mb-3" *ngIf="replyFiles.length">
     <div class="file-chip" *ngFor="let f of replyFiles; let i = index">
-      <i class="bi" [class.bi-image]="f.type.startsWith('image/')" [class.bi-camera-video]="f.type.startsWith('video/')"></i>
-      <span class="file-name">{{ f.name }}</span>
-      <button type="button" class="file-remove" (click)="removeReplyFile(i)"><i class="bi bi-x"></i></button>
-    </div>
+  <i class="bi"
+     [class.bi-image]="f.type.startsWith('image/')"
+     [class.bi-camera-video]="f.type.startsWith('video/')"
+     [class.bi-file-earmark-pdf]="f.type === 'application/pdf'"></i>
+  <span class="file-name">{{ f.name }}</span>
+  <button type="button" class="file-remove" (click)="removeReplyFile(i)"><i class="bi bi-x"></i></button>
+</div>
   </div>
 
   <button class="btn-send" (click)="sendReply()" [disabled]="sending() || !replyText.trim()">

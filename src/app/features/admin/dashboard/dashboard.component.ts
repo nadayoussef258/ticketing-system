@@ -25,25 +25,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   loading = signal(true);
   newTicketIds = signal<Set<string>>(new Set());
 
-  filterStatus: FilterStatus = 'all';
-  filterPriority: FilterPriority = 'all';
-  search = '';
-
   private realtimeChannel: any;
 
-  filtered = computed(() => {
-    let list = this.tickets();
-    if (this.filterStatus !== 'all') list = list.filter(t => t.status === this.filterStatus);
-    if (this.filterPriority !== 'all') list = list.filter(t => t.priority === this.filterPriority);
-    if (this.search.trim()) {
-      const q = this.search.toLowerCase();
-      list = list.filter(t =>
-        t.subject.toLowerCase().includes(q) ||
-        t.projects?.name?.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  });
+  filterStatus = signal<FilterStatus>('all');
+filterPriority = signal<FilterPriority>('all');
+search = signal('');
+
+filtered = computed(() => {
+  let list = this.tickets();
+  if (this.filterStatus() !== 'all') list = list.filter(t => t.status === this.filterStatus());
+  if (this.filterPriority() !== 'all') list = list.filter(t => t.priority === this.filterPriority());
+  if (this.search().trim()) {
+    const q = this.search().toLowerCase();
+    list = list.filter(t =>
+      t.subject.toLowerCase().includes(q) ||
+      t.projects?.name?.toLowerCase().includes(q)
+    );
+  }
+  return list;
+});
 
   newCount = computed(() => this.newTicketIds().size);
 

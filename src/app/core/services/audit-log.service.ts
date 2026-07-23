@@ -17,13 +17,13 @@ export interface AuditLog {
 export class AuditLogService {
   constructor(private supabase: SupabaseService) {}
 
-  async listLogs(limit = 100): Promise<AuditLog[]> {
-    const { data, error } = await this.supabase.client
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    if (error) throw error;
-    return (data ?? []) as AuditLog[];
-  }
+ async listLogs(limit = 30, offset = 0): Promise<AuditLog[]> {
+  const { data, error } = await this.supabase.client
+    .from('audit_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return (data ?? []) as AuditLog[];
+}
 }

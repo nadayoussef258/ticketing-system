@@ -1,3 +1,50 @@
+.panel-card {
+  background: #fff;
+  border: 1px solid #f0f0f5;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.logs-scroll {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+/* شكل أنضف للـ scrollbar (اختياري) */
+.logs-scroll::-webkit-scrollbar { width: 6px; }
+.logs-scroll::-webkit-scrollbar-thumb { background: #d9dbe8; border-radius: 10px; }
+
+.load-more-bar {
+  border-top: 1px solid #f0f0f5;
+  padding: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.btn-load-more {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #e0e2fb;
+  padding: 8px 24px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-load-more:hover:not(:disabled) { background: #e0e4ff; }
+.btn-load-more:disabled { opacity: 0.6; cursor: default; }
+
+.log-attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: #4f46e5;
+  text-decoration: none;
+}
 .filter-chip {
   border: 1px solid #e4e6ef;
   background: #fff;
@@ -41,4 +88,11 @@
   color: #9ca3af;
   white-space: nowrap;
   flex-shrink: 0;
+}
+.log-attachment-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-right: 6px;
 }
