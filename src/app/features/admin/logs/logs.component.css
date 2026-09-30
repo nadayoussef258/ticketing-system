@@ -80,7 +80,7 @@
 
 .log-body { flex: 1; min-width: 0; }
 .log-title { font-size: 0.85rem; color: #111827; }
-.log-target { color: #4f46e5; font-weight: 600; margin-left: 4px; }
+.log-target { color: #4f46e5; font-weight: 600; margin-inline-start: 4px; }
 .log-details { font-size: 0.78rem; color: #6b7280; margin-top: 2px; }
 
 .log-time {
@@ -94,5 +94,5 @@
   height: 60px;
   object-fit: cover;
   border-radius: 6px;
-  margin-right: 6px;
+  margin-inline-end: 6px;
 }

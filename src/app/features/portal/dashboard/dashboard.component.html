@@ -6,19 +6,28 @@
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div>
-        <h1 class="page-title mb-0">My Tickets</h1>
+        <h1 class="page-title mb-0">{{ 'portal.myTickets' | t }}</h1>
         <p class="page-sub mb-0">{{ auth.user()?.project_name }}</p>
       </div>
       <a routerLink="/portal/new-ticket" class="btn-new">
-        <i class="bi bi-plus-lg me-1"></i>New Ticket
+        <i class="bi bi-plus-lg me-1"></i>{{ 'portal.newTicket' | t }}
       </a>
     </div>
 
+    <div class="seg-tabs mb-3">
+      <button type="button" class="seg-tab" [class.active]="view() === 'active'" (click)="setView('active')">
+        <i class="bi bi-inbox"></i>{{ 'common.active' | t }}
+      </button>
+      <button type="button" class="seg-tab" [class.active]="view() === 'archived'" (click)="setView('archived')">
+        <i class="bi bi-archive"></i>{{ 'common.archive' | t }}
+      </button>
+    </div>
+
     <!-- Stats -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" *ngIf="view() === 'active'">
       <div class="col-6 col-md-3" *ngFor="let stat of stats">
         <div class="stat-card">
-          <div class="stat-label">{{ stat.label }}</div>
+          <div class="stat-label">{{ stat.label | t }}</div>
           <div class="stat-value" [style.color]="stat.color">{{ stat.count }}</div>
         </div>
       </div>
@@ -27,20 +36,25 @@
     <!-- Loading -->
     <div class="text-center py-5" *ngIf="loading()">
       <div class="spinner-border" style="color: #4f46e5;"></div>
-      <p class="text-muted mt-2 small">Loading tickets...</p>
+      <p class="text-muted mt-2 small">{{ 'common.loadingTickets' | t }}</p>
     </div>
 
     <!-- Empty -->
-    <div class="empty-state" *ngIf="!loading() && tickets().length === 0">
+    <div class="empty-state" *ngIf="!loading() && tickets().length === 0 && view() === 'active'">
       <i class="bi bi-ticket-perforated"></i>
-      <h6>No tickets yet</h6>
-      <p>Submit your first support request</p>
-      <a routerLink="/portal/new-ticket" class="btn-empty">Open a ticket</a>
+      <h6>{{ 'portal.noTickets' | t }}</h6>
+      <p>{{ 'portal.submitFirst' | t }}</p>
+      <a routerLink="/portal/new-ticket" class="btn-empty">{{ 'portal.openTicket' | t }}</a>
+    </div>
+    <div class="empty-state" *ngIf="!loading() && tickets().length === 0 && view() === 'archived'">
+      <i class="bi bi-archive"></i>
+      <h6>{{ 'portal.archiveEmpty' | t }}</h6>
+      <p>{{ 'portal.archiveHint' | t }}</p>
     </div>
 
     <!-- Tickets list -->
     <div *ngIf="!loading() && tickets().length > 0">
-   <a   
+      <a
         *ngFor="let ticket of tickets()"
         [routerLink]="['/portal/ticket', ticket.id]"
         class="ticket-card d-flex align-items-center gap-3 mb-2 text-decoration-none"
@@ -52,15 +66,16 @@
 
         <div class="flex-grow-1 min-w-0">
           <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-            <span class="ticket-title">{{ ticket.subject }}</span>
+            <span class="ticket-title" dir="auto">{{ ticket.subject }}</span>
             <span *ngIf="ticketsWithNewReply().has(ticket.id)" class="new-reply-badge">
-              <i class="bi bi-chat-dots-fill me-1"></i>New reply
+              <i class="bi bi-chat-dots-fill me-1"></i>{{ 'portal.newReply' | t }}
             </span>
           </div>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <app-priority-badge [priority]="ticket.priority" />
             <app-status-badge [status]="ticket.status" />
-            <span class="ticket-date">{{ ticket.created_at | date:'MMM d, y' }}</span>
+            <span class="ticket-date"><bdi>{{ ticket.ticket_number }}</bdi> · <bdi>{{ ticket.requester_name }}</bdi><ng-container *ngIf="ticket.department"> · <bdi>{{ deptSvc.label(ticket.department) }}</bdi></ng-container></span>
+            <span class="ticket-date">{{ ticket.created_at | tdate: 'medium' }}</span>
           </div>
         </div>
 

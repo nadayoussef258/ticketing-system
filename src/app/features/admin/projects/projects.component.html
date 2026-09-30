@@ -1,14 +1,13 @@
-<!-- features/admin/projects/projects.component.html -->
 <app-navbar orgName="IT Team" [role]="'admin'" />
 
 <div class="page-bg min-vh-100">
   <div class="container-fluid px-4 py-4" style="max-width: 1100px; margin: 0 auto;">
 
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/admin/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <a routerLink="/admin/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
       <div>
-        <h1 class="page-title mb-0">Projects</h1>
-        <p class="page-sub mb-0">Manage client organizations and their portal access</p>
+        <h1 class="page-title mb-0">{{ 'projects.title' | t }}</h1>
+        <p class="page-sub mb-0">{{ 'projects.subtitle' | t }}</p>
       </div>
     </div>
 
@@ -19,25 +18,25 @@
 
     <!-- Create form -->
     <div class="panel-card p-4 mb-4">
-      <div class="section-label mb-3">Create new project</div>
+      <div class="section-label mb-3">{{ 'projects.create' | t }}</div>
       <div class="row g-3">
         <div class="col-12 col-md-4">
-          <label class="field-label">Project name <span class="text-danger">*</span></label>
-          <input type="text" class="field-input" placeholder="e.g. معهد ابن خلدون" [(ngModel)]="newProject.name" />
+          <label class="field-label">{{ 'projects.name' | t }} <span class="text-danger">*</span></label>
+          <input type="text" class="field-input" [placeholder]="'projects.namePh' | t" [(ngModel)]="newProject.name" />
         </div>
         <div class="col-12 col-md-2">
-          <label class="field-label">Code <span class="text-danger">*</span></label>
-          <input type="text" class="field-input" placeholder="e.g. BKI"
+          <label class="field-label">{{ 'projects.code' | t }} <span class="text-danger">*</span></label>
+          <input type="text" class="field-input" [placeholder]="'projects.codePh' | t"
             [(ngModel)]="newProject.code"
             (input)="newProject.code = newProject.code.toUpperCase()" />
-          <div class="field-hint">A-Z, 0-9, dash only</div>
+          <div class="field-hint">{{ 'projects.codeHint' | t }}</div>
         </div>
         <div class="col-12 col-md-3">
-          <label class="field-label">Description</label>
-          <input type="text" class="field-input" placeholder="Optional" [(ngModel)]="newProject.description" />
+          <label class="field-label">{{ 'projects.description' | t }}</label>
+          <input type="text" class="field-input" [placeholder]="'common.optional' | t" [(ngModel)]="newProject.description" />
         </div>
         <div class="col-12 col-md-3">
-          <label class="field-label">Color</label>
+          <label class="field-label">{{ 'projects.color' | t }}</label>
           <div class="color-picker-row">
             <span *ngFor="let c of PRESET_COLORS" class="color-dot"
               [style.background]="c"
@@ -49,7 +48,7 @@
           <button class="btn-primary" (click)="createProject()" [disabled]="saving() || !canCreate()">
             <span *ngIf="saving()" class="spinner-border spinner-border-sm me-1"></span>
             <i class="bi bi-plus-lg me-1" *ngIf="!saving()"></i>
-            {{ saving() ? 'Creating...' : 'Create project' }}
+            {{ (saving() ? 'projects.creating' : 'projects.createBtn') | t }}
           </button>
         </div>
       </div>
@@ -65,7 +64,7 @@
       <div *ngIf="projects().length === 0" class="col-12">
         <div class="empty-state">
           <i class="bi bi-folder"></i>
-          <p>No projects yet. Create your first one above.</p>
+          <p>{{ 'projects.empty' | t }}</p>
         </div>
       </div>
 
@@ -74,29 +73,35 @@
           <div class="project-header" [style.background]="project.color">
             <div class="project-code">{{ project.code }}</div>
             <span class="project-status-pill" [class.archived]="project.status === 'archived'">
-              {{ project.status }}
+              {{ 'projects.status.' + project.status | t }}
             </span>
           </div>
           <div class="project-body">
-            <h3 class="project-name">{{ project.name }}</h3>
-            <p class="project-desc" *ngIf="project.description">{{ project.description }}</p>
+            <h3 class="project-name" dir="auto">{{ project.name }}</h3>
+            <p class="project-desc" *ngIf="project.description" dir="auto">{{ project.description }}</p>
             <div class="project-meta">
-              <span class="meta-chip text-muted">{{ project.created_at | date:'MMM y' }}</span>
+              <span class="meta-chip">
+                <i class="bi bi-diagram-3 me-1"></i>{{ 'projects.deptCount' | t: { n: deptCounts()[project.id] ?? 0 } }}
+              </span>
+              <span class="meta-chip text-muted">{{ project.created_at | tdate: 'monthYear' }}</span>
             </div>
           </div>
           <div class="project-actions">
-            <button class="action-btn" title="Add admin" (click)="openAddAdmin(project)">
+            <button class="action-btn" [title]="'projects.departments' | t" (click)="openDepartments(project)">
+              <i class="bi bi-diagram-3"></i>
+            </button>
+            <button class="action-btn" [title]="'projects.addAccount' | t" (click)="openAddAdmin(project)">
               <i class="bi bi-person-plus"></i>
             </button>
-            <button class="action-btn" title="Edit" (click)="openEdit(project)">
+            <button class="action-btn" [title]="'common.edit' | t" (click)="openEdit(project)">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="action-btn" [title]="project.status === 'active' ? 'Archive' : 'Activate'"
+            <button class="action-btn" [title]="(project.status === 'active' ? 'projects.archiveProject' : 'projects.activateProject') | t"
               (click)="toggleStatus(project)">
               <i class="bi" [class.bi-archive]="project.status === 'active'"
                 [class.bi-arrow-counterclockwise]="project.status === 'archived'"></i>
             </button>
-            <button class="action-btn danger" title="Delete" (click)="deleteTarget.set(project)">
+            <button class="action-btn danger" [title]="'common.delete' | t" (click)="deleteTarget.set(project)">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -110,23 +115,23 @@
 <!-- Edit modal -->
 <div class="modal-overlay" *ngIf="editTarget()" (click)="editTarget.set(null)">
   <div class="modal-box" style="max-width:520px;" (click)="$event.stopPropagation()">
-    <p class="modal-title">Edit project</p>
+    <p class="modal-title">{{ 'projects.edit' | t }}</p>
     <div class="row g-3 mb-3">
       <div class="col-8">
-        <label class="field-label">Name</label>
+        <label class="field-label">{{ 'common.name' | t }}</label>
         <input type="text" class="field-input" [(ngModel)]="editForm.name" />
       </div>
       <div class="col-4">
-        <label class="field-label">Code</label>
+        <label class="field-label">{{ 'projects.code' | t }}</label>
         <input type="text" class="field-input" [(ngModel)]="editForm.code"
           (input)="editForm.code = editForm.code.toUpperCase()" />
       </div>
       <div class="col-12">
-        <label class="field-label">Description</label>
+        <label class="field-label">{{ 'projects.description' | t }}</label>
         <input type="text" class="field-input" [(ngModel)]="editForm.description" />
       </div>
       <div class="col-12">
-        <label class="field-label">Color</label>
+        <label class="field-label">{{ 'projects.color' | t }}</label>
         <div class="color-picker-row">
           <span *ngFor="let c of PRESET_COLORS" class="color-dot"
             [style.background]="c"
@@ -137,9 +142,9 @@
     </div>
     <div class="d-flex gap-2">
       <button class="btn-primary" (click)="saveEdit()" [disabled]="saving()">
-        <span *ngIf="saving()" class="spinner-border spinner-border-sm me-1"></span>Save
+        <span *ngIf="saving()" class="spinner-border spinner-border-sm me-1"></span>{{ 'common.save' | t }}
       </button>
-      <button class="btn-secondary" (click)="editTarget.set(null)">Cancel</button>
+      <button class="btn-secondary" (click)="editTarget.set(null)">{{ 'common.cancel' | t }}</button>
     </div>
   </div>
 </div>
@@ -148,24 +153,24 @@
 <div class="modal-overlay" *ngIf="addAdminTarget()" (click)="addAdminTarget.set(null)">
   <div class="modal-box" style="max-width:480px;" (click)="$event.stopPropagation()">
     <p class="modal-title">
-      Add admin to <strong>{{ addAdminTarget()?.name }}</strong>
+      {{ 'projects.addAccountTo' | t }} <strong>{{ addAdminTarget()?.name }}</strong>
     </p>
     <p class="field-hint mb-3">
-      This creates a login that can only manage <strong>{{ addAdminTarget()?.code }}</strong>'s tickets and chat.
+      {{ 'projects.addAccountHint' | t: { name: addAdminTarget()?.name } }}
     </p>
     <div class="row g-3 mb-3">
       <div class="col-12">
-        <label class="field-label">Full name</label>
-        <input type="text" class="field-input" placeholder="Optional" [(ngModel)]="addAdminForm.full_name" />
+        <label class="field-label">{{ 'common.fullName' | t }}</label>
+        <input type="text" class="field-input" [placeholder]="'common.optional' | t" [(ngModel)]="addAdminForm.full_name" />
       </div>
       <div class="col-12">
-        <label class="field-label">Email <span class="text-danger">*</span></label>
-        <input type="email" class="field-input" placeholder="admin@example.com" [(ngModel)]="addAdminForm.email" />
+        <label class="field-label">{{ 'common.email' | t }} <span class="text-danger">*</span></label>
+        <input type="email" class="field-input" placeholder="institute@example.com" [(ngModel)]="addAdminForm.email" />
       </div>
       <div class="col-12" style="position:relative;">
-        <label class="field-label">Password <span class="text-danger">*</span></label>
+        <label class="field-label">{{ 'common.password' | t }} <span class="text-danger">*</span></label>
         <input [type]="showAddAdminPassword ? 'text' : 'password'" class="field-input"
-          placeholder="At least 6 characters" [(ngModel)]="addAdminForm.password" style="padding-right:40px;" />
+          [placeholder]="'common.passwordMin' | t" [(ngModel)]="addAdminForm.password" style="padding-inline-end:40px;" />
         <button type="button" class="eye-toggle" style="top:32px;" (click)="showAddAdminPassword = !showAddAdminPassword">
           <i class="bi" [class.bi-eye]="!showAddAdminPassword" [class.bi-eye-slash]="showAddAdminPassword"></i>
         </button>
@@ -174,9 +179,9 @@
     <div class="d-flex gap-2">
       <button class="btn-primary" (click)="submitAddAdmin()" [disabled]="addingAdmin() || !canAddAdmin()">
         <span *ngIf="addingAdmin()" class="spinner-border spinner-border-sm me-1"></span>
-        {{ addingAdmin() ? 'Adding...' : 'Add admin' }}
+        {{ (addingAdmin() ? 'common.adding' : 'projects.addAccountBtn') | t }}
       </button>
-      <button class="btn-secondary" (click)="addAdminTarget.set(null)">Cancel</button>
+      <button class="btn-secondary" (click)="addAdminTarget.set(null)">{{ 'common.cancel' | t }}</button>
     </div>
   </div>
 </div>
@@ -186,16 +191,89 @@
   <div class="modal-box" (click)="$event.stopPropagation()">
     <div class="d-flex align-items-center gap-2 mb-3">
       <div class="danger-icon"><i class="bi bi-exclamation-triangle"></i></div>
-      <p class="modal-title mb-0">Delete project</p>
+      <p class="modal-title mb-0">{{ 'projects.delete' | t }}</p>
     </div>
     <div class="danger-box mb-4">
-      Deleting <strong>"{{ deleteTarget()?.name }}"</strong> will also delete all its tickets. This cannot be undone.
+      {{ 'projects.deleteWarn' | t: { name: deleteTarget()?.name } }}
     </div>
     <div class="d-flex gap-2">
       <button class="btn-danger" (click)="confirmDelete()" [disabled]="deleting()">
-        <span *ngIf="deleting()" class="spinner-border spinner-border-sm me-1"></span>Delete
+        <span *ngIf="deleting()" class="spinner-border spinner-border-sm me-1"></span>{{ 'common.delete' | t }}
       </button>
-      <button class="btn-secondary" (click)="deleteTarget.set(null)">Cancel</button>
+      <button class="btn-secondary" (click)="deleteTarget.set(null)">{{ 'common.cancel' | t }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Departments modal -->
+<div class="modal-overlay" *ngIf="deptTarget()" (click)="closeDepartments()">
+  <div class="modal-box dept-modal" (click)="$event.stopPropagation()">
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-1">
+      <p class="modal-title">{{ 'projects.departments' | t }} — <strong>{{ deptTarget()?.name }}</strong></p>
+      <button type="button" class="dept-close" (click)="closeDepartments()" [attr.aria-label]="'common.close' | t"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <p class="field-hint mb-3">{{ 'dept.hint' | t }}</p>
+
+    <!-- Add -->
+    <div class="dept-add">
+      <input type="text" class="field-input" dir="rtl" lang="ar" [placeholder]="'dept.arPh' | t"
+             [(ngModel)]="newDept.name_ar" (keyup.enter)="addDepartment()" maxlength="100" />
+      <input type="text" class="field-input" [placeholder]="'dept.enPh' | t"
+             [(ngModel)]="newDept.name_en" (keyup.enter)="addDepartment()" maxlength="100" />
+      <button class="btn-primary" (click)="addDepartment()" [disabled]="deptBusy() || !canAddDept()">
+        <i class="bi bi-plus-lg me-1"></i>{{ 'common.add' | t }}
+      </button>
+    </div>
+
+    <div class="dept-msg dept-error" *ngIf="deptError()"><i class="bi bi-x-circle me-1"></i>{{ deptError() }}</div>
+    <div class="dept-msg dept-info" *ngIf="deptInfo()"><i class="bi bi-info-circle me-1"></i>{{ deptInfo() }}</div>
+
+    <!-- List -->
+    <div *ngIf="deptLoading()" class="text-center py-4">
+      <div class="spinner-border spinner-border-sm" style="color:#4f46e5;"></div>
+    </div>
+
+    <div class="dept-empty" *ngIf="!deptLoading() && departments().length === 0">
+      <i class="bi bi-diagram-3"></i>
+      <p>{{ 'dept.empty' | t }}</p>
+    </div>
+
+    <ul class="dept-list" *ngIf="!deptLoading() && departments().length > 0">
+      <li *ngFor="let d of departments()" class="dept-row" [class.inactive]="!d.is_active">
+        <ng-container *ngIf="editingDeptId() !== d.id; else editRow">
+          <div class="dept-names">
+            <span class="dept-ar" dir="auto" lang="ar">{{ d.name_ar }}</span>
+            <span class="dept-en">{{ d.name_en }}</span>
+          </div>
+          <span class="dept-badge" *ngIf="!d.is_active">{{ 'common.inactive' | t }}</span>
+          <div class="dept-actions">
+            <button class="action-btn" [title]="'common.edit' | t" (click)="startDeptEdit(d)" [disabled]="deptBusy()">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="action-btn" [title]="(d.is_active ? 'common.deactivate' : 'common.activate') | t" (click)="toggleDeptActive(d)" [disabled]="deptBusy()">
+              <i class="bi" [class.bi-toggle-on]="d.is_active" [class.bi-toggle-off]="!d.is_active"
+                 [style.color]="d.is_active ? '#059669' : '#9ca3af'"></i>
+            </button>
+            <button class="action-btn danger" [title]="'common.delete' | t" (click)="deleteDepartment(d)" [disabled]="deptBusy()">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </ng-container>
+
+        <ng-template #editRow>
+          <div class="dept-edit">
+            <input type="text" class="field-input" dir="rtl" lang="ar" [(ngModel)]="editDept.name_ar" maxlength="100" />
+            <input type="text" class="field-input" [(ngModel)]="editDept.name_en" maxlength="100"
+                   (keyup.enter)="saveDeptEdit(d)" />
+            <button class="btn-primary" (click)="saveDeptEdit(d)" [disabled]="deptBusy()">{{ 'common.save' | t }}</button>
+            <button class="btn-secondary" (click)="editingDeptId.set(null)">{{ 'common.cancel' | t }}</button>
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+
+    <div class="d-flex justify-content-end mt-3">
+      <button class="btn-secondary" (click)="closeDepartments()">{{ 'common.done' | t }}</button>
     </div>
   </div>
 </div>

@@ -4,32 +4,62 @@
   <div class="container-fluid px-4 py-4" style="max-width: 760px; margin: 0 auto;">
 
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/portal/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
-      <h1 class="page-title mb-0">Ticket detail</h1>
+      <a routerLink="/portal/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
+      <h1 class="page-title mb-0">{{ 'detail.title' | t }}</h1>
     </div>
 
     <div *ngIf="loading()" class="text-center py-5">
       <div class="spinner-border" style="color:#4f46e5;"></div>
     </div>
 
+    <div *ngIf="!loading() && notFound()" class="info-card p-5 text-center">
+      <i class="bi bi-lock" style="font-size:2rem; color:#9ca3af;"></i>
+      <p class="mt-2 mb-3" style="color:#6b7280;">{{ 'detail.notAvailable' | t }}</p>
+      <a routerLink="/portal/dashboard" class="btn-archive">{{ 'detail.backToMyTickets' | t }}</a>
+    </div>
+
     <ng-container *ngIf="!loading() && ticket()">
 
       <div class="info-card p-4 mb-3">
-        <h2 class="ticket-heading mb-3">{{ ticket()!.subject }}</h2>
+        <h2 class="ticket-heading mb-3" dir="auto">{{ ticket()!.subject }}</h2>
         <div class="d-flex flex-wrap gap-2 mb-3">
           <app-priority-badge [priority]="ticket()!.priority" />
           <app-status-badge [status]="ticket()!.status" />
-          <span class="ticket-date-label">{{ ticket()!.created_at | date:'MMM d, y · h:mm a' }}</span>
+          <span class="ticket-date-label">{{ ticket()!.created_at | tdate: 'full' }}</span>
         </div>
-        <p class="ticket-desc">{{ ticket()!.description }}</p>
+        <p class="ticket-desc" dir="auto">{{ ticket()!.description }}</p>
+        <div *ngIf="ticket()!.attachments?.length" class="reply-attachments mb-3">
+          <a *ngFor="let url of ticket()!.attachments; let i = index" [href]="url" target="_blank" rel="noopener" class="attachment-thumb">
+            <i class="bi bi-paperclip"></i> {{ 'common.attachmentN' | t: { n: i + 1 } }}
+          </a>
+        </div>
+        <div class="requester-line">
+          <span><i class="bi bi-hash"></i><bdi>{{ ticket()!.ticket_number }}</bdi></span>
+          <span><i class="bi bi-person"></i><bdi>{{ ticket()!.requester_name }}</bdi></span>
+          <span *ngIf="ticket()!.department"><i class="bi bi-diagram-3"></i>{{ deptSvc.label(ticket()!.department) }}</span>
+        </div>
+
+        <div class="archive-row mt-3" *ngIf="ticket()!.archived_at || canArchive">
+          <div class="archived-banner flex-grow-1" *ngIf="ticket()!.archived_at">
+            <i class="bi bi-archive"></i>{{ 'detail.archivedOn' | t: { date: (ticket()!.archived_at | tdate: 'medium') } }}
+          </div>
+          <button type="button" class="btn-archive" (click)="toggleArchive()" [disabled]="archiving()">
+            <span *ngIf="archiving()" class="spinner-border spinner-border-sm"></span>
+            <i class="bi" *ngIf="!archiving()"
+               [class.bi-archive]="!ticket()!.archived_at"
+               [class.bi-box-arrow-up]="!!ticket()!.archived_at"></i>
+            {{ (ticket()!.archived_at ? 'archive.restore' : 'archive.archive') | t }}
+          </button>
+        </div>
+        <div class="file-error" *ngIf="archiveError()">{{ archiveError() }}</div>
       </div>
 
       <div class="info-card p-4 mb-3">
-        <div class="section-label">Conversation</div>
+        <div class="section-label">{{ 'detail.conversation' | t }}</div>
 
         <div *ngIf="comments().length === 0" class="empty-replies">
           <i class="bi bi-chat-square-dots"></i>
-          <p>No replies yet — the IT team will respond shortly.</p>
+          <p>{{ 'detail.noRepliesClient' | t }}</p>
         </div>
 
         <div *ngFor="let comment of comments()" class="reply-item mb-3"
@@ -37,13 +67,13 @@
           [class.reply-client]="!comment.is_agent_reply">
           <div class="reply-bubble">
             <div class="reply-sender">
-              {{ comment.is_agent_reply ? '🛡️ IT Support' : '👤 You' }}
-              <span class="reply-time">{{ comment.created_at | date:'MMM d · h:mm a' }}</span>
+              {{ comment.is_agent_reply ? '🛡️ ' + ('detail.itSupport' | t) : '👤 ' + ('detail.you' | t) }}
+              <span class="reply-time">{{ comment.created_at | tdate: 'time' }}</span>
             </div>
-            <p class="reply-text">{{ comment.content }}</p>
+            <p class="reply-text" dir="auto">{{ comment.content }}</p>
             <div *ngIf="comment.attachments?.length" class="reply-attachments mt-2">
-              <a *ngFor="let url of comment.attachments" [href]="url" target="_blank" class="attachment-thumb">
-                <i class="bi bi-paperclip"></i> Attachment
+              <a *ngFor="let url of comment.attachments; let i = index" [href]="url" target="_blank" rel="noopener" class="attachment-thumb">
+                <i class="bi bi-paperclip"></i> {{ 'common.attachmentN' | t: { n: i + 1 } }}
               </a>
             </div>
           </div>
@@ -52,33 +82,33 @@
 
       <div class="info-card p-4"
         *ngIf="ticket()!.status !== 'closed' && ticket()!.status !== 'resolved'">
-        <div class="section-label">Add a reply</div>
+        <div class="section-label">{{ 'detail.addReply' | t }}</div>
 
         <textarea class="reply-input mb-3" rows="3"
-          placeholder="Type your message..."
+          [placeholder]="'detail.typeMessage' | t"
           [(ngModel)]="replyText"></textarea>
 
         <label class="file-drop mb-2">
-  <i class="bi bi-paperclip"></i>
-  <span>Attach images, videos, or PDF</span>
-  <input type="file" accept="image/*,video/*,application/pdf" multiple hidden (change)="onReplyFileSelect($event)" />
-</label>
+          <i class="bi bi-paperclip"></i>
+          <span>{{ 'common.attachFiles' | t }}</span>
+          <input type="file" accept="image/*,video/*,application/pdf" multiple hidden (change)="onReplyFileSelect($event)" />
+        </label>
         <div class="file-error" *ngIf="replyFileError()">{{ replyFileError() }}</div>
         <div class="file-list mb-3" *ngIf="replyFiles.length">
           <div class="file-chip" *ngFor="let f of replyFiles; let i = index">
-  <i class="bi"
-     [class.bi-image]="f.type.startsWith('image/')"
-     [class.bi-camera-video]="f.type.startsWith('video/')"
-     [class.bi-file-earmark-pdf]="f.type === 'application/pdf'"></i>
-  <span class="file-name">{{ f.name }}</span>
-  <button type="button" class="file-remove" (click)="removeReplyFile(i)"><i class="bi bi-x"></i></button>
-</div>
+            <i class="bi"
+               [class.bi-image]="f.type.startsWith('image/')"
+               [class.bi-camera-video]="f.type.startsWith('video/')"
+               [class.bi-file-earmark-pdf]="f.type === 'application/pdf'"></i>
+            <span class="file-name">{{ f.name }}</span>
+            <button type="button" class="file-remove" (click)="removeReplyFile(i)" [attr.aria-label]="'common.remove' | t"><i class="bi bi-x"></i></button>
+          </div>
         </div>
 
         <button class="btn-send" (click)="sendReply()" [disabled]="sending() || !replyText.trim()">
           <span *ngIf="sending()" class="spinner-border spinner-border-sm"></span>
           <i class="bi bi-send" *ngIf="!sending()"></i>
-          {{ sending() ? 'Sending...' : 'Send reply' }}
+          {{ (sending() ? 'common.sending' : 'common.sendReply') | t }}
         </button>
       </div>
 

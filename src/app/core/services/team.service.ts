@@ -3,81 +3,77 @@ import { SupabaseService } from './supabase.service';
 import { UserProfile, ManagedUser } from '../models';
 import { environment } from '../../../environments/environment';
 
+/** Error thrown by the admin-users Edge Function (keeps the server's error code). */
+export class AdminFunctionError extends Error {
+  constructor(message: string, public code?: string) { super(message); }
+}
+
 @Injectable({ providedIn: 'root' })
 export class TeamService {
   private functionsUrl = `${environment.supabaseUrl}/functions/v1`;
 
   constructor(private supabase: SupabaseService) {}
 
-  private async getAuthHeader(): Promise<Record<string, string>> {
+  private async callAdminUsers<T>(body: Record<string, unknown>): Promise<T> {
     const { data } = await this.supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) throw new Error('Not authenticated');
-    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-  }
 
-  private async callFunction<T>(name: string, body: unknown): Promise<T> {
-    const headers = await this.getAuthHeader();
-    const res = await fetch(`${this.functionsUrl}/${name}`, {
-      method: 'POST', headers, body: JSON.stringify(body),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error ?? 'Request failed');
+    // Never leave the button spinning forever: give up after 30s
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30_000);
+    let res: Response;
+    try {
+      res = await fetch(`${this.functionsUrl}/admin-users`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      throw new AdminFunctionError(
+        err?.name === 'AbortError'
+          ? 'The server did not respond in 30 seconds. Check the admin-users function logs in Supabase.'
+          : 'Could not reach the server. Check your connection.',
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new AdminFunctionError(json.error ?? 'Request failed', json.code);
     return json as T;
   }
 
-  /** IT-only staff for the ticket assign-to dropdown (excludes project_admins/clients) */
+  /** "Assign to" list: the IT admin + active IT team members (admin only). */
   async getAssignableStaff(): Promise<UserProfile[]> {
-    const { data, error } = await this.supabase.client
-      .rpc('get_it_staff');
+    const { data, error } = await this.supabase.client.rpc('get_it_staff');
     if (error) throw error;
     return (data ?? []) as UserProfile[];
   }
 
-  /** Get all managed users (IT + clients) for the Team Management admin panel */
+  /** Every account (IT + client accounts) with email, role, project and status. */
   async listAllUsers(): Promise<ManagedUser[]> {
-    const { data, error } = await this.supabase.client.rpc('get_all_users');
+    const { data, error } = await this.supabase.client.rpc('get_managed_users');
     if (error) throw error;
     return (data ?? []) as ManagedUser[];
   }
 
-  /** Create a new user (admin or user role) via Edge Function */
+  /** Create an IT team member, or a client account linked to a project. */
   async createUser(params: {
     email: string;
     password: string;
-    role: 'admin' | 'user';
     full_name: string;
+    role: 'it_staff' | 'project_admin';
+    project_id?: string | null;
   }): Promise<{ user_id: string }> {
-    // Use existing Edge Function (smooth-worker = admin-create-user)
-    return this.callFunction('smooth-worker', params);
+    return this.callAdminUsers({ action: 'create', ...params });
   }
 
-  /** Reset password via Edge Function */
   async updatePassword(userId: string, newPassword: string): Promise<void> {
-    await this.callFunction('dynamic-api', { user_id: userId, new_password: newPassword });
+    await this.callAdminUsers({ action: 'reset_password', user_id: userId, new_password: newPassword });
   }
 
-  /** Disable/enable/delete user via Edge Function */
   async setUserStatus(userId: string, action: 'disable' | 'enable' | 'delete'): Promise<void> {
-    await this.callFunction('super-worker', { user_id: userId, action });
-  }
-
-  /**
-   * Assign ticket to team member and send email notification.
-   * Email is sent via Supabase Edge Function that uses Resend / SMTP.
-   */
-  async notifyAssignment(params: {
-    assignee_email: string;
-    assignee_name: string;
-    ticket_number: string;
-    ticket_subject: string;
-    ticket_url: string;
-  }): Promise<void> {
-    try {
-      await this.callFunction('notify-assignment', params);
-    } catch (err) {
-      // Email failure should not block the assignment
-      console.warn('Assignment email failed (non-critical):', err);
-    }
+    await this.callAdminUsers({ action, user_id: userId });
   }
 }

@@ -12,10 +12,22 @@ export interface Project {
   created_at: string;
 }
 
+export interface Department {
+  id: string;
+  project_id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export type UserRole = 'admin' | 'it_staff' | 'project_admin' | 'user';
+
 export interface UserProfile {
   id: string;
   full_name: string;
-  role: 'admin' | 'project_admin' | 'user';
+  role: UserRole;
   project_id?: string | null;   // set when role = 'project_admin'
   email?: string;        // joined from auth.users
   banned_until?: string | null;
@@ -38,11 +50,15 @@ export interface Ticket {
   assigned_to_id?: string | null;
   attachments?: string[];
   created_by?: string;
+  department_id?: string | null;
+  archived_at?: string | null;
+  archived_by?: string | null;
   created_at: string;
   updated_at: string;
   // joined
   projects?: Project;
   assignee?: UserProfile;
+  department?: Pick<Department, 'id' | 'name_ar' | 'name_en'> | null;
 }
 
 export type TicketCategory = 'hardware' | 'software' | 'network' | 'access' | 'email' | 'printer' | 'other';
@@ -86,7 +102,7 @@ export interface ChatMessage {
 export interface AppUser {
   id: string;
   email: string;
-  role: 'admin' | 'project_admin' | 'user';
+  role: UserRole;
   full_name: string;
   project_id?: string | null;   // for project_admin (and optionally regular users) linked to a project
   project_name?: string;
@@ -97,7 +113,7 @@ export interface ManagedUser {
   user_id: string;
   email: string;
   full_name: string;
-  user_role: string;   // 'admin' | 'project_admin' | 'user'
+  user_role: UserRole;
   project_id?: string | null;
   project_name?: string | null;
   banned_until?: string | null;

@@ -83,7 +83,7 @@
 .notif-badge {
   position: absolute;
   top: -4px;
-  right: -4px;
+  inset-inline-end: -4px;
   background: #dc2626;
   color: #fff;
   font-size: 0.65rem;
@@ -101,7 +101,7 @@
 .notif-dropdown {
   position: absolute;
   top: 46px;
-  right: 0;
+  inset-inline-end: 0;
   width: 340px;
   max-height: 420px;
   background: #fff;

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, userGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, itTeamGuard, adminOnlyGuard, clientGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
@@ -17,7 +17,7 @@ export const routes: Routes = [
   // Admin (IT Team)
   {
     path: 'admin',
-    canActivate: [authGuard, adminGuard],
+    canActivate: [authGuard, itTeamGuard],
     children: [
       {
         path: 'dashboard',
@@ -29,14 +29,17 @@ export const routes: Routes = [
       },
       {
         path: 'projects',
+        canActivate: [adminOnlyGuard],
         loadComponent: () => import('./features/admin/projects/projects.component').then(m => m.ProjectsComponent),
       },
       {
         path: 'team',
+        canActivate: [adminOnlyGuard],
         loadComponent: () => import('./features/admin/team/team.component').then(m => m.TeamComponent),
       },
        {
         path: 'logs',
+        canActivate: [adminOnlyGuard],
         loadComponent: () => import('./features/admin/logs/logs.component').then(m => m.LogsComponent),
       },
     ],
@@ -45,7 +48,7 @@ export const routes: Routes = [
   // Portal (Client users)
   {
     path: 'portal',
-    canActivate: [userGuard],
+    canActivate: [authGuard, clientGuard],
     children: [
       {
         path: 'dashboard',

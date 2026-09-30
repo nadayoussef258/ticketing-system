@@ -1,5 +1,6 @@
 import { NgClass } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-status-badge',
@@ -11,7 +12,8 @@ export class StatusBadgeComponent {
   @Input() status: 'open' | 'in_progress' | 'resolved' | 'closed' = 'open';
 
   get cssClass() { return `status-${this.status}`; }
+  private i18n = inject(TranslationService);
   get label() {
-    return { open: 'Open', in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed' }[this.status];
+    return this.i18n.t('status.' + this.status);
   }
 }

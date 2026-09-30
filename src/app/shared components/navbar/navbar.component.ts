@@ -1,27 +1,31 @@
 // shared/components/navbar/navbar.component.ts
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { NgIf, NgFor, DatePipe } from '@angular/common';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NgIf, NgFor } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService, AppNotification } from '../../core/services/notification.service';
+import { TranslatePipe, TranslateDatePipe } from '../../core/i18n/t.pipe';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, NgIf, NgFor, DatePipe],
+  imports: [RouterLink, RouterLinkActive, NgIf, NgFor, TranslatePipe, TranslateDatePipe],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   @Input() orgName = '';
-  @Input() role: 'admin' | 'user' | 'client' | 'it' = 'user';
+  /** @deprecated role now comes from AuthService; kept so existing templates still compile. */
+  @Input() role: string = '';
 
   showDropdown = false;
 
   constructor(
-    private auth: AuthService,
+    public auth: AuthService,
     public notificationSvc: NotificationService,
     private router: Router,
+    private i18n: TranslationService,
   ) {}
 
   ngOnInit() {
@@ -33,17 +37,46 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   get roleLabel(): string {
-    switch (this.role) {
-      case 'admin': return 'IT Admin';
-      case 'it':    return 'IT Team';
-      case 'user':  return 'Client';
-      case 'client':return 'Client';
-      default:      return this.role;
+    switch (this.auth.role()) {
+      case 'admin':         return this.i18n.t('role.admin');
+      case 'it_staff':      return this.i18n.t('role.staff');
+      case 'project_admin':
+      case 'user':          return this.i18n.t('role.client');
+      default:              return '';
     }
   }
 
+  /**
+   * Notifications are stored in English by the database
+   * ("New ticket: <subject>", "Ticket assigned to you: TK-12", "New reply on TK-12").
+   * Show a translated heading + the useful part (subject / ticket number).
+   */
+  notifTitle(n: AppNotification): string {
+    const tail = this.stripPrefix(n.title, ['New ticket: ', 'Ticket assigned to you: ', 'New reply on ']);
+    const key = n.type === 'new_ticket' ? 'notif.newTicket'
+              : n.type === 'assigned'   ? 'notif.assigned'
+              : 'notif.newReply';
+    return `${this.i18n.t(key)}: ${tail}`;
+  }
+
+  notifDetail(n: AppNotification): string {
+    if (!n.body) return '';
+    if (n.type === 'new_comment') return n.body.replace(' replied: ', ': ');
+    if (n.type === 'new_ticket') {
+      const m = /^(.*) opened a new (low|medium|high|critical) priority ticket\.$/.exec(n.body);
+      if (m) return this.i18n.t('notif.openedBy', { name: m[1], priority: this.i18n.t('priority.' + m[2]) });
+    }
+    return n.body;
+  }
+
+  private stripPrefix(text: string, prefixes: string[]): string {
+    for (const p of prefixes) if (text.startsWith(p)) return text.slice(p.length);
+    return text;
+  }
+
+  /** IT side (admin + team members) — shows the bell and IT nav. */
   get isAdminRole(): boolean {
-    return this.role === 'admin' || this.role === 'it';
+    return this.auth.isItTeam();
   }
 
   toggleDropdown() {
@@ -54,7 +87,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (!n.is_read) await this.notificationSvc.markAsRead(n.id);
     this.showDropdown = false;
     if (n.ticket_id) {
-      const base = this.isAdminRole ? '/admin/ticket-detail' : '/portal/ticket';
+      const base = this.isAdminRole ? '/admin/ticket' : '/portal/ticket';
       this.router.navigate([base, n.ticket_id]);
     }
   }

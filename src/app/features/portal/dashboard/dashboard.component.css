@@ -57,7 +57,7 @@
 /* Card with new reply — highlighted */
 .ticket-card.has-reply {
   border-color: #4f46e5;
-  border-left: 4px solid #4f46e5;
+  border-inline-start: 4px solid #4f46e5;
   background: #fafafe;
 }
 

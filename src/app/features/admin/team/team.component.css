@@ -43,7 +43,7 @@
 .field-input option { background: #fff; }
 
 .eye-toggle {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  position: absolute; inset-inline-end: 12px; top: 50%; transform: translateY(-50%);
   background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 0.85rem;
 }
 .eye-toggle:hover { color: #4f46e5; }
@@ -122,3 +122,5 @@
 .modal-sub   { font-size: 0.82rem; color: #6b7280; margin: 0 0 20px; }
 .danger-icon { width: 36px; height: 36px; background: #fef2f2; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #dc2626; }
 .danger-box  { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px; font-size: 0.85rem; color: #374151; }
+.badge-staff { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; display: inline-flex; align-items: center; }
+.project-hint { font-size: 0.72rem; color: #9ca3af; margin-top: 3px; }

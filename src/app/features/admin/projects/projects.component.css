@@ -42,7 +42,7 @@
 .field-input::placeholder { color: #9ca3af; }
 
 .eye-toggle {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  position: absolute; inset-inline-end: 12px; top: 50%; transform: translateY(-50%);
   background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 0.85rem;
 }
 .eye-toggle:hover { color: #4f46e5; }
@@ -160,4 +160,50 @@
 .danger-box {
   background: #fef2f2; border: 1px solid #fecaca;
   border-radius: 10px; padding: 14px; font-size: 0.85rem; color: #374151;
+}
+
+/* ---------- Departments modal ---------- */
+.dept-modal { max-width: 640px; width: 100%; max-height: 88vh; overflow-y: auto; }
+.dept-close { border: none; background: transparent; color: #9ca3af; font-size: 1rem; padding: 2px 4px; cursor: pointer; }
+.dept-close:hover { color: #111827; }
+
+.dept-add, .dept-edit {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.dept-edit { grid-template-columns: 1fr 1fr auto auto; width: 100%; }
+
+.field-input[lang="ar"], .dept-ar {
+  font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}
+
+.dept-msg { margin-top: 10px; border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; }
+.dept-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.dept-info  { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+.dept-list { list-style: none; margin: 14px 0 0; padding: 0; border: 1px solid #eef0f4; border-radius: 12px; overflow: hidden; }
+.dept-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  min-height: 56px;
+}
+.dept-row:last-child { border-bottom: none; }
+.dept-row.inactive .dept-names { opacity: 0.5; }
+.dept-names { display: flex; flex-direction: column; align-items: flex-start; flex: 1; min-width: 0; line-height: 1.4; }
+.dept-ar { font-size: 0.95rem; font-weight: 600; color: #111827; unicode-bidi: isolate; }
+.dept-en { font-size: 0.78rem; color: #6b7280; }
+.dept-badge { font-size: 0.68rem; font-weight: 600; color: #9ca3af; background: #f3f4f6; border-radius: 99px; padding: 2px 8px; }
+.dept-actions { display: flex; gap: 2px; }
+
+.dept-empty { text-align: center; color: #9ca3af; padding: 26px 0 10px; }
+.dept-empty i { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+.dept-empty p { margin: 0; font-size: 0.85rem; }
+
+@media (max-width: 575px) {
+  .dept-add, .dept-edit { grid-template-columns: 1fr; }
 }

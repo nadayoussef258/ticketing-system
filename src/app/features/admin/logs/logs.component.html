@@ -3,10 +3,10 @@
 <div class="page-bg min-vh-100">
   <div class="container-fluid px-4 py-4" style="max-width: 1000px; margin: 0 auto">
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/admin/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
+      <a routerLink="/admin/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
       <div>
-        <h1 class="page-title mb-0">Activity Logs</h1>
-        <p class="page-sub mb-0">Track every action taken by the IT team</p>
+        <h1 class="page-title mb-0">{{ 'logs.title' | t }}</h1>
+        <p class="page-sub mb-0">{{ 'logs.subtitle' | t }}</p>
       </div>
     </div>
 
@@ -20,19 +20,19 @@
           <div class="log-icon"><i class="bi" [ngClass]="icon(l.action)"></i></div>
           <div class="log-body">
             <div class="log-title">
-              <strong>{{ l.actor_name ?? 'System' }}</strong> {{ label(l.action) }}
+              <strong><bdi>{{ l.actor_name ?? ('logs.system' | t) }}</bdi></strong> {{ label(l.action) }}
               <span *ngIf="l.details?.['ticket_number']" class="log-target"
                 >#{{ l.details?.['ticket_number'] }}</span
               >
             </div>
             <div class="log-details" *ngIf="l.details?.['from'] && l.details?.['to']">
-              {{ l.details?.['from'] }} → {{ l.details?.['to'] }}
+              <bdi>{{ fromTo(l, 'from') }}</bdi> {{ i18n.isRtl() ? '←' : '→' }} <bdi>{{ fromTo(l, 'to') }}</bdi>
             </div>
             <div class="log-details" *ngIf="l.details?.['preview']">
-              "{{ l.details?.['preview'] }}"
+              <span dir="auto">"{{ l.details?.['preview'] }}"</span>
             </div>
             <div class="log-details" *ngIf="l.details?.['target_name']">
-              Target: {{ l.details?.['target_name'] }}
+              {{ 'logs.target' | t }}: <bdi>{{ l.details?.['target_name'] }}</bdi>
             </div>
            <div class="log-attachments mt-1" *ngIf="attachmentsOf(l).length">
   <a
@@ -44,23 +44,23 @@
     <ng-container *ngIf="isImageUrl(url); else fileIcon">
       <img [src]="url" class="log-attachment-thumb" alt="attachment" />
     </ng-container>
-    <ng-template #fileIcon> <i class="bi bi-paperclip"></i> Attachment </ng-template>
+    <ng-template #fileIcon> <i class="bi bi-paperclip"></i> {{ 'common.attachment' | t }} </ng-template>
   </a>
 </div>
           </div>
-          <div class="log-time">{{ l.created_at | date: 'MMM d · h:mm a' }}</div>
+          <div class="log-time">{{ l.created_at | tdate: 'time' }}</div>
         </div>
 
         <div *ngIf="logs().length === 0" class="text-center py-5 text-muted">
           <i class="bi bi-clock-history" style="font-size: 2rem; display: block; margin-bottom: 8px"></i>
-          No activity yet.
+          {{ 'logs.empty' | t }}
         </div>
       </div>
 
       <div class="load-more-bar" *ngIf="hasMore() && !loading()">
         <button class="btn-load-more" (click)="loadMore()" [disabled]="loadingMore()">
           <span *ngIf="loadingMore()" class="spinner-border spinner-border-sm me-2"></span>
-          {{ loadingMore() ? 'جاري التحميل...' : 'تحميل المزيد' }}
+          {{ (loadingMore() ? 'common.loading' : 'logs.loadMore') | t }}
         </button>
       </div>
     </div>

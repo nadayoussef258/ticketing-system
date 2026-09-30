@@ -155,7 +155,7 @@
 
 /* Unread open tickets — left accent line */
 .ticket-unread td:first-child {
-  border-left: 3px solid #4f46e5 !important;
+  border-inline-start: 3px solid #4f46e5 !important;
 }
 
 /* New realtime tickets */
@@ -220,3 +220,6 @@
 }
 .empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
 .empty-state p { font-size: 0.88rem; margin: 0; }
+.ticket-sub { font-size: 0.75rem; color: #9ca3af; margin-top: 2px; }
+.table-scroll { overflow-x: auto; }
+.table-scroll .table { min-width: 760px; }

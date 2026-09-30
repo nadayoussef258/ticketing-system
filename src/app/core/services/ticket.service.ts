@@ -8,30 +8,45 @@ export class TicketService {
 
   // ===== Tickets =====
 
-  /** Admin: all tickets with project + assignee info */
-  async getAllTickets(): Promise<Ticket[]> {
-    const { data, error } = await this.supabase.client
+  /**
+   * IT side. RLS decides what comes back:
+   * admin → every ticket, it_staff → only tickets assigned to them.
+   * archived=false → active tickets, archived=true → the archive.
+   */
+  async getAllTickets(archived = false): Promise<Ticket[]> {
+    let q = this.supabase.client
       .from('tickets')
-      .select('*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name)')
-      .order('created_at', { ascending: false });
+      .select('*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name), department:departments(id, name_ar, name_en)');
+    q = archived ? q.not('archived_at', 'is', null) : q.is('archived_at', null);
+    const { data, error } = await q.order(archived ? 'archived_at' : 'created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as Ticket[];
   }
 
-  /** User/Portal: own tickets or assigned tickets */
-  async getMyTickets(): Promise<Ticket[]> {
-    const { data, error } = await this.supabase.client
+  /** Client portal: the project's tickets (RLS scopes them to the project). */
+  async getMyTickets(archived = false): Promise<Ticket[]> {
+    let q = this.supabase.client
       .from('tickets')
-      .select('*, projects(name, color, code)')
-      .order('created_at', { ascending: false });
+      .select('*, projects(name, color, code), department:departments(id, name_ar, name_en)');
+    q = archived ? q.not('archived_at', 'is', null) : q.is('archived_at', null);
+    const { data, error } = await q.order(archived ? 'archived_at' : 'created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as Ticket[];
+  }
+
+  /** Archive / unarchive (only resolved or closed tickets — enforced in the DB too). */
+  async setArchived(id: string, archived: boolean): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('tickets')
+      .update({ archived_at: archived ? new Date().toISOString() : null })
+      .eq('id', id);
+    if (error) throw error;
   }
 
   async getTicketById(id: string): Promise<Ticket | null> {
     const { data, error } = await this.supabase.client
       .from('tickets')
-      .select('*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name, id)')
+      .select('*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name, id), department:departments(id, name_ar, name_en)')
       .eq('id', id)
       .single();
     if (error) throw error;
@@ -56,14 +71,11 @@ export class TicketService {
     if (error) throw error;
   }
 
-  async assignTicket(ticketId: string, assigneeId: string | null, assigneeName: string | null): Promise<void> {
+  /** assigned_to (the name) is filled in by the database trigger. */
+  async assignTicket(ticketId: string, assigneeId: string | null): Promise<void> {
     const { error } = await this.supabase.client
       .from('tickets')
-      .update({
-        assigned_to_id: assigneeId,
-        assigned_to: assigneeName,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ assigned_to_id: assigneeId, updated_at: new Date().toISOString() })
       .eq('id', ticketId);
     if (error) throw error;
   }

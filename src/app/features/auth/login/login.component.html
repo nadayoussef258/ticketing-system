@@ -5,8 +5,8 @@
       <div class="brand-icon mx-auto mb-4">
         <i class="bi bi-headset"></i>
       </div>
-      <h1 class="login-title">IT Support Portal</h1>
-      <p class="login-sub">Sign in to access your support tickets</p>
+      <h1 class="login-title">{{ 'login.title' | t }}</h1>
+      <p class="login-sub">{{ 'login.subtitle' | t }}</p>
     </div>
 
     <div class="error-alert" *ngIf="error()">
@@ -15,15 +15,17 @@
 
     <form (ngSubmit)="onLogin()" #loginForm="ngForm">
       <div class="mb-4">
-        <label class="field-label">Email address</label>
+        <label class="field-label" for="loginEmail">{{ 'login.email' | t }}</label>
         <div class="input-wrap">
           <i class="bi bi-envelope input-icon"></i>
           <input
+            id="loginEmail"
             type="email"
             class="field-input"
             placeholder="you@company.com"
             [(ngModel)]="email"
             name="email"
+            autocomplete="username"
             required
             [disabled]="loading()"
           />
@@ -31,19 +33,22 @@
       </div>
 
       <div class="mb-5">
-        <label class="field-label">Password</label>
+        <label class="field-label" for="loginPassword">{{ 'login.password' | t }}</label>
         <div class="input-wrap">
           <i class="bi bi-lock input-icon"></i>
           <input
+            id="loginPassword"
             [type]="showPassword ? 'text' : 'password'"
             class="field-input has-toggle"
             placeholder="••••••••"
             [(ngModel)]="password"
             name="password"
+            autocomplete="current-password"
             required
             [disabled]="loading()"
           />
-          <button type="button" class="eye-btn" (click)="showPassword = !showPassword">
+          <button type="button" class="eye-btn" (click)="showPassword = !showPassword"
+                  [attr.aria-label]="(showPassword ? 'common.hidePassword' : 'common.showPassword') | t">
             <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
           </button>
         </div>
@@ -51,7 +56,7 @@
 
       <button type="submit" class="btn-signin" [disabled]="loading() || !email || !password">
         <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"></span>
-        {{ loading() ? 'Signing in...' : 'Sign in' }}
+        {{ (loading() ? 'login.signingIn' : 'login.signIn') | t }}
       </button>
     </form>
 

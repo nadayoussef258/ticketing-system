@@ -4,8 +4,8 @@
   <div class="container-fluid px-4 py-4" style="max-width: 640px; margin: 0 auto;">
 
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/portal/dashboard" class="btn-back"><i class="bi bi-arrow-left"></i></a>
-      <h1 class="page-title mb-0">Open a new ticket</h1>
+      <a routerLink="/portal/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
+      <h1 class="page-title mb-0">{{ 'newTicket.title' | t }}</h1>
     </div>
 
     <div class="form-card p-4 p-md-5">
@@ -14,65 +14,87 @@
       </div>
 
       <form (ngSubmit)="onSubmit()" #f="ngForm">
-        <div class="mb-4">
-  <label class="form-label-custom">Subject <span class="required-star">*</span></label>
-  <input type="text" class="form-input"
-    placeholder="Brief summary of the issue"
-    [(ngModel)]="form.subject" name="subject"
-    required minlength="5" maxlength="150" #subjectField="ngModel" />
-  <div class="field-error-inline" *ngIf="subjectField.dirty && form.subject.length > 0 && form.subject.length < 5">
-    Subject must be at least 5 characters
-  </div>
-</div>
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <label class="form-label-custom" for="requesterName">{{ 'newTicket.yourName' | t }} <span class="required-star">*</span></label>
+            <input id="requesterName" type="text" class="form-input"
+              [placeholder]="'newTicket.yourNamePh' | t"
+              [(ngModel)]="form.requester_name" name="requester_name"
+              required minlength="2" maxlength="100" autocomplete="off" #nameField="ngModel" />
+            <div class="field-error-inline" *ngIf="nameField.touched && form.requester_name.trim().length < 2">
+              {{ 'newTicket.nameRequired' | t }}
+            </div>
+          </div>
+
+          <div class="col-12" *ngIf="needsDepartment">
+            <label class="form-label-custom" for="department">{{ 'common.department' | t }} <span class="required-star">*</span></label>
+            <select id="department" class="form-input" [(ngModel)]="form.department_id" name="department_id" required>
+              <option value="" disabled>{{ 'newTicket.selectDepartment' | t }}</option>
+              <option *ngFor="let d of departments()" [value]="d.id">{{ deptSvc.label(d) }}</option>
+            </select>
+          </div>
+        </div>
 
         <div class="mb-4">
-          <label class="form-label-custom">Category <span class="required-star">*</span></label>
-          <select class="form-input" [(ngModel)]="form.category" name="category" required>
-            <option value="hardware">🖥️ Hardware</option>
-            <option value="software">💾 Software</option>
-            <option value="network">🌐 Network</option>
-            <option value="access">🔑 Access</option>
-            <option value="email">✉️ Email</option>
-            <option value="printer">🖨️ Printer</option>
-            <option value="other">📋 Other</option>
+          <label class="form-label-custom" for="subject">{{ 'newTicket.subject' | t }} <span class="required-star">*</span></label>
+          <input id="subject" type="text" class="form-input"
+            [placeholder]="'newTicket.subjectPh' | t"
+            [(ngModel)]="form.subject" name="subject"
+            required minlength="5" maxlength="150" #subjectField="ngModel" />
+          <div class="field-error-inline" *ngIf="subjectField.dirty && form.subject.length > 0 && form.subject.length < 5">
+            {{ 'newTicket.subjectMin' | t }}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-custom" for="category">{{ 'newTicket.category' | t }} <span class="required-star">*</span></label>
+          <select id="category" class="form-input" [(ngModel)]="form.category" name="category" required>
+            <option value="hardware">🖥️ {{ 'category.hardware' | t }}</option>
+            <option value="software">💾 {{ 'category.software' | t }}</option>
+            <option value="network">🌐 {{ 'category.network' | t }}</option>
+            <option value="access">🔑 {{ 'category.access' | t }}</option>
+            <option value="email">✉️ {{ 'category.email' | t }}</option>
+            <option value="printer">🖨️ {{ 'category.printer' | t }}</option>
+            <option value="other">📋 {{ 'category.other' | t }}</option>
           </select>
         </div>
 
         <div class="mb-4">
-          <label class="form-label-custom">Priority <span class="required-star">*</span></label>
-          <select class="form-input" [(ngModel)]="form.priority" name="priority" required>
-            <option value="low">🟢 Low — minor issue, no urgency</option>
-            <option value="medium">🟡 Medium — affects work but workaround exists</option>
-            <option value="high">🔴 High — blocking work</option>
-            <option value="critical">🚨 Critical — system down</option>
+          <label class="form-label-custom" for="priority">{{ 'common.priority' | t }} <span class="required-star">*</span></label>
+          <select id="priority" class="form-input" [(ngModel)]="form.priority" name="priority" required>
+            <option value="low">🟢 {{ 'priority.lowHint' | t }}</option>
+            <option value="medium">🟡 {{ 'priority.mediumHint' | t }}</option>
+            <option value="high">🔴 {{ 'priority.highHint' | t }}</option>
+            <option value="critical">🚨 {{ 'priority.criticalHint' | t }}</option>
           </select>
         </div>
 
         <div class="mb-4">
-  <label class="form-label-custom">Description <span class="required-star">*</span></label>
-  <textarea class="form-input" rows="6"
-    placeholder="Describe the issue in detail. Include steps to reproduce, error messages, and what you expected to happen."
-    [(ngModel)]="form.description" name="description"
-    required minlength="10" #descField="ngModel"></textarea>
-  <div class="field-error-inline" *ngIf="descField.dirty && form.description.length > 0 && form.description.length < 10">
-    Description must be at least 10 characters
-  </div>
-</div>
+          <label class="form-label-custom" for="description">{{ 'newTicket.description' | t }} <span class="required-star">*</span></label>
+          <textarea id="description" class="form-input" rows="6"
+            [placeholder]="'newTicket.descriptionPh' | t"
+            [(ngModel)]="form.description" name="description"
+            required minlength="10" #descField="ngModel"></textarea>
+          <div class="field-error-inline" *ngIf="descField.dirty && form.description.length > 0 && form.description.length < 10">
+            {{ 'newTicket.descriptionMin' | t }}
+          </div>
+        </div>
 
         <div class="mb-5">
-          <label class="form-label-custom">Attachments <span class="field-hint-inline">(images or videos, optional)</span></label>
+          <label class="form-label-custom">{{ 'newTicket.attachments' | t }} <span class="field-hint-inline">{{ 'newTicket.attachmentsHint' | t }}</span></label>
           <label class="file-drop">
             <i class="bi bi-paperclip"></i>
-            <span>Click to attach images or videos</span>
-            <input type="file" accept="image/*,video/*" multiple hidden (change)="onFileSelect($event)" />
+            <span>{{ 'newTicket.attachClick' | t }}</span>
+            <input type="file" accept="image/*,video/*,application/pdf" multiple hidden (change)="onFileSelect($event)" />
           </label>
           <div class="file-error" *ngIf="fileError()">{{ fileError() }}</div>
 
           <div class="file-list" *ngIf="selectedFiles.length">
             <div class="file-chip" *ngFor="let file of selectedFiles; let i = index">
-              <i class="bi" [class.bi-image]="file.type.startsWith('image/')" [class.bi-camera-video]="file.type.startsWith('video/')"></i>
+              <i class="bi" [class.bi-image]="file.type.startsWith('image/')" [class.bi-camera-video]="file.type.startsWith('video/')"
+                 [class.bi-file-earmark-pdf]="file.type === 'application/pdf'"></i>
               <span class="file-name">{{ file.name }}</span>
-              <button type="button" class="file-remove" (click)="removeFile(i)">
+              <button type="button" class="file-remove" (click)="removeFile(i)" [attr.aria-label]="'common.remove' | t">
                 <i class="bi bi-x"></i>
               </button>
             </div>
@@ -80,13 +102,12 @@
         </div>
 
         <div class="d-flex gap-2">
-          <button type="submit" class="btn-submit"
-  [disabled]="loading() || f.invalid">
+          <button type="submit" class="btn-submit" [disabled]="!canSubmit">
             <span *ngIf="loading()" class="spinner-border spinner-border-sm"></span>
             <i class="bi bi-send" *ngIf="!loading()"></i>
-            {{ loading() ? 'Submitting...' : 'Submit ticket' }}
+            {{ (loading() ? 'newTicket.submitting' : 'newTicket.submit') | t }}
           </button>
-          <a routerLink="/portal/dashboard" class="btn-cancel">Cancel</a>
+          <a routerLink="/portal/dashboard" class="btn-cancel">{{ 'common.cancel' | t }}</a>
         </div>
       </form>
     </div>

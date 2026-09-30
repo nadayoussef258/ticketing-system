@@ -1,5 +1,6 @@
 import { NgClass } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-priority-badge',
@@ -11,8 +12,9 @@ export class PriorityBadgeComponent {
   @Input() priority: 'low' | 'medium' | 'high' | 'critical' = 'medium';
 
   get cssClass() { return `priority-${this.priority}`; }
+  private i18n = inject(TranslationService);
   get label() {
-    return { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' }[this.priority];
+    return this.i18n.t('priority.' + this.priority);
   }
   get icon() {
     return {

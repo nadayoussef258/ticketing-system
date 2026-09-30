@@ -55,7 +55,7 @@
 
 .input-icon {
   position: absolute;
-  left: 14px;
+  inset-inline-start: 14px;
   color: #9ca3af;
   font-size: 0.9rem;
   pointer-events: none;
@@ -67,14 +67,15 @@
   border: 1.5px solid #e4e6ef;
   color: #111827;
   border-radius: 11px;
-  padding: 11px 14px 11px 40px;
+  padding: 11px 14px;
+  padding-inline-start: 40px;
   font-size: 0.9rem;
   font-family: inherit;
   transition: all 0.15s;
   outline: none;
 }
 
-.field-input.has-toggle { padding-right: 44px; }
+.field-input.has-toggle { padding-inline-end: 44px; }
 
 .field-input:focus {
   background: #fff;
@@ -87,7 +88,7 @@
 
 .eye-btn {
   position: absolute;
-  right: 12px;
+  inset-inline-end: 12px;
   background: transparent;
   border: none;
   color: #9ca3af;
