@@ -74,6 +74,9 @@
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <app-priority-badge [priority]="ticket.priority" />
             <app-status-badge [status]="ticket.status" />
+            <span class="to-chip" *ngIf="ticket.to_department" [style.--chip-color]="ticket.to_department.color">
+              <i class="bi bi-send"></i><bdi>{{ sdSvc.label(ticket.to_department) }}</bdi>
+            </span>
             <span class="ticket-date"><bdi>{{ ticket.ticket_number }}</bdi> · <bdi>{{ ticket.requester_name }}</bdi><ng-container *ngIf="ticket.department"> · <bdi>{{ deptSvc.label(ticket.department) }}</bdi></ng-container></span>
             <span class="ticket-date">{{ ticket.created_at | tdate: 'medium' }}</span>
           </div>

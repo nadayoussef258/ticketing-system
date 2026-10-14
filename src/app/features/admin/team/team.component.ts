@@ -24,11 +24,13 @@ export class TeamComponent implements OnInit {
   toast = signal('');
   toastError = signal(false);
 
-  /** 'it' = IT admin + team members, 'clients' = project accounts */
-  tab = signal<'it' | 'clients'>('it');
+  /** 'it' = IT admin + team members, 'clients' = project accounts, 'depts' = department accounts */
+  tab = signal<'it' | 'clients' | 'depts'>('it');
   itUsers     = computed(() => this.users().filter(u => u.user_role === 'admin' || u.user_role === 'it_staff'));
   clientUsers = computed(() => this.users().filter(u => u.user_role === 'project_admin' || u.user_role === 'user'));
-  visibleUsers = computed(() => this.tab() === 'it' ? this.itUsers() : this.clientUsers());
+  deptUsers   = computed(() => this.users().filter(u => u.user_role === 'dept_user'));
+  visibleUsers = computed(() =>
+    this.tab() === 'it' ? this.itUsers() : this.tab() === 'depts' ? this.deptUsers() : this.clientUsers());
 
   // New accounts created here are IT team members.
   // Client accounts are created from the Projects page (they need a project).
@@ -142,6 +144,7 @@ export class TeamComponent implements OnInit {
       case 'admin':         return this.i18n.t('role.admin');
       case 'it_staff':      return this.i18n.t('role.staff');
       case 'project_admin': return this.i18n.t('role.client');
+      case 'dept_user':     return this.i18n.t('role.dept');
       default:              return this.i18n.t('role.user');
     }
   }

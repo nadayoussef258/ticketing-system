@@ -3,6 +3,7 @@ import { Ticket, TicketComment } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DepartmentService } from '../../../core/services/Department.service';
+import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -41,6 +42,7 @@ export class PortalTicketDetailComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     private ticketSvc: TicketService,
     public deptSvc: DepartmentService,
+    public sdSvc: ServiceDepartmentService,
     private supabase: SupabaseService,
     private route: ActivatedRoute,
     private notificationSvc: NotificationService,
@@ -78,6 +80,11 @@ export class PortalTicketDetailComponent implements OnInit, OnDestroy {
       });
 
       this.ticketChannel = this.ticketSvc.subscribeToTicketUpdates(id, (updated) => {
+        const before = this.ticket();
+        if (before && updated.to_department_id !== before.to_department_id) {
+          this.load(id);   // transferred to another department: refresh its name
+          return;
+        }
         this.ticket.update(t => t ? { ...t, ...updated } : updated);
       });
     } catch (err) {
@@ -93,6 +100,11 @@ export class PortalTicketDetailComponent implements OnInit, OnDestroy {
     this.commentsChannel?.unsubscribe();
     this.ticketChannel?.unsubscribe();
     this.commentsChannel = this.ticketChannel = null;
+  }
+
+  /** Name of the department handling the ticket ("IT Support" when unknown). */
+  get handlerLabel(): string {
+    return this.sdSvc.label(this.ticket()?.to_department) || this.i18n.t('detail.itSupport');
   }
 
   get canArchive(): boolean {

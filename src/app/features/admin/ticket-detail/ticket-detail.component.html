@@ -4,7 +4,7 @@
   <div class="container-fluid px-4 py-4" style="max-width: 960px; margin: 0 auto;">
 
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/admin/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
+      <a routerLink="/admin/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left flip-rtl"></i></a>
       <h1 class="page-title mb-0">{{ 'detail.title' | t }}</h1>
     </div>
 
@@ -23,6 +23,19 @@
 
         <div class="col-lg-8">
           <div class="info-card p-4 mb-3">
+            <!-- From → To -->
+            <div class="route-strip mb-3">
+              <span class="route-node" [style.--node-color]="ticket()!.from_department?.color ?? ticket()!.projects?.color ?? '#9ca3af'">
+                <span class="route-caption">{{ 'detail.from' | t }}</span>
+                <bdi class="route-name">{{ sourceLabel(ticket()!) || '—' }}</bdi>
+              </span>
+              <i class="bi bi-arrow-right route-arrow flip-rtl"></i>
+              <span class="route-node" [style.--node-color]="ticket()!.to_department?.color ?? '#4f46e5'">
+                <span class="route-caption">{{ 'detail.sentTo' | t }}</span>
+                <bdi class="route-name">{{ sdSvc.label(ticket()!.to_department) }}</bdi>
+              </span>
+            </div>
+
             <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
               <h2 class="ticket-heading mb-0" dir="auto">{{ ticket()!.subject }}</h2>
               <span class="ticket-date-label">{{ ticket()!.created_at | tdate: 'medium' }}</span>
@@ -30,8 +43,8 @@
             <div class="d-flex flex-wrap gap-2 mb-3">
               <app-priority-badge [priority]="ticket()!.priority" />
               <app-status-badge [status]="ticket()!.status" />
-              <span class="org-chip"><i class="bi bi-kanban me-1"></i>{{ ticket()!.projects?.name }}</span>
-              <span class="org-chip"><i class="bi bi-tag me-1"></i>{{ 'category.' + ticket()!.category | t }}</span>
+              <span class="org-chip" *ngIf="ticket()!.projects"><i class="bi bi-kanban me-1"></i>{{ ticket()!.projects?.name }}</span>
+              <span class="org-chip"><i class="bi bi-tag me-1"></i>{{ sdSvc.categoryLabel(ticket()!.to_department_id, ticket()!.category) }}</span>
             </div>
             <div class="requester-line mb-3">
               <span><i class="bi bi-hash"></i><bdi>{{ ticket()!.ticket_number }}</bdi></span>
@@ -77,8 +90,8 @@
           </div>
 
           <div class="info-card p-4">
-            <div class="section-label">{{ 'detail.replyAsIt' | t }}</div>
-            <textarea class="reply-input mb-3" rows="4"
+            <div class="section-label">{{ (itIsRequester ? 'detail.addReply' : 'detail.replyAsIt') | t }}</div>
+            <textarea class="reply-input mb-3" rows="4" dir="auto"
                       [placeholder]="'detail.typeResponse' | t" [(ngModel)]="replyText"></textarea>
 
             <label class="file-drop mb-2">
@@ -133,14 +146,25 @@
 
             <div class="mb-3">
               <label class="form-label small fw-semibold text-muted">{{ 'common.assignedTo' | t }}</label>
-              <select *ngIf="auth.isAdmin(); else assigneeText" class="manage-select"
-                      [(ngModel)]="editAssigned" (change)="updateField('assigned_to_id', editAssigned || null)">
-                <option value="">{{ 'common.unassigned' | t }}</option>
-                <option *ngFor="let m of teamMembers()" [value]="m.id">{{ m.full_name }}</option>
-              </select>
+              <ng-container *ngIf="inIt; else notInIt">
+                <select *ngIf="auth.isAdmin(); else assigneeText" class="manage-select"
+                        [(ngModel)]="editAssigned" (change)="updateField('assigned_to_id', editAssigned || null)">
+                  <option value="">{{ 'common.unassigned' | t }}</option>
+                  <option *ngFor="let m of teamMembers()" [value]="m.id">{{ m.full_name }}</option>
+                </select>
+              </ng-container>
               <ng-template #assigneeText>
                 <div class="assignee-text"><i class="bi bi-person-check me-1"></i>{{ assigneeName }}</div>
               </ng-template>
+              <ng-template #notInIt>
+                <div class="assign-note"><i class="bi bi-info-circle me-1"></i>{{ 'detail.assignOnlyIt' | t }}</div>
+              </ng-template>
+            </div>
+
+            <div class="mb-3" *ngIf="canTransfer">
+              <button type="button" class="btn-transfer w-100" (click)="showTransfer.set(true)">
+                <i class="bi bi-arrow-left-right"></i>{{ 'detail.transfer' | t }}
+              </button>
             </div>
 
             <div class="mb-3">
@@ -166,6 +190,9 @@
         </div>
 
       </div>
+
+      <app-transfer-dialog *ngIf="showTransfer()" [ticket]="ticket()!" [adminView]="true"
+        (transferred)="onTransferred($event)" (closed)="showTransfer.set(false)" />
     </ng-container>
   </div>
 </div>

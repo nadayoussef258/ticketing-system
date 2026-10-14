@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 
 export interface AppNotification {
   id: string;
-  type: 'new_ticket' | 'new_comment' | 'assigned';
+  type: 'new_ticket' | 'new_comment' | 'assigned' | 'transferred';
   ticket_id: string | null;
   title: string;
   body: string | null;

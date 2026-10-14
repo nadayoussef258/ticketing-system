@@ -1,0 +1,24 @@
+/* Department home — builds on the client dashboard styles */
+
+.dept-mark {
+  width: 42px; height: 42px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 12px; color: #fff; font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.12);
+}
+
+.dept-chip {
+  --chip-color: #9ca3af;
+  display: inline-flex; align-items: center; gap: 5px;
+  max-width: 220px;
+  padding: 2px 10px;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--chip-color) 35%, transparent);
+  background: color-mix(in srgb, var(--chip-color) 10%, #fff);
+  color: #374151;
+  font-size: 0.72rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dept-chip i { color: var(--chip-color); font-size: 0.75rem; }
+
+[dir="rtl"] .flip-rtl { transform: scaleX(-1); }

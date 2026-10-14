@@ -3,7 +3,7 @@
 <div class="page-bg min-vh-100">
   <div class="container-fluid px-4 py-4" style="max-width: 1200px; margin: 0 auto;">
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 gap-2 flex-wrap">
       <div>
         <h1 class="page-title mb-0">{{ (auth.isStaff() ? 'dash.myAssigned' : 'dash.title') | t }}</h1>
         <p class="page-sub mb-0">
@@ -13,9 +13,14 @@
           </span>
         </p>
       </div>
-      <a routerLink="/admin/team" class="btn-admin" *ngIf="auth.isAdmin()">
-        <i class="bi bi-gear me-1"></i>{{ 'dash.admin' | t }}
-      </a>
+      <div class="d-flex gap-2" *ngIf="auth.isAdmin()">
+        <a routerLink="/admin/new-ticket" class="btn-new-ticket">
+          <i class="bi bi-plus-lg"></i>{{ 'portal.newTicket' | t }}
+        </a>
+        <a routerLink="/admin/team" class="btn-admin">
+          <i class="bi bi-gear me-1"></i>{{ 'dash.admin' | t }}
+        </a>
+      </div>
     </div>
 
     <div class="seg-tabs mb-3">
@@ -56,6 +61,12 @@
         <option value="medium">{{ 'priority.medium' | t }}</option>
         <option value="low">{{ 'priority.low' | t }}</option>
       </select>
+      <select class="filter-select" *ngIf="auth.isAdmin() && sdSvc.departments().length > 1"
+              [ngModel]="filterTarget()" (ngModelChange)="filterTarget.set($event)"
+              [attr.aria-label]="'filter.allTargets' | t">
+        <option value="all">{{ 'filter.allTargets' | t }}</option>
+        <option *ngFor="let d of sdSvc.departments()" [value]="d.id">{{ sdSvc.label(d) }}</option>
+      </select>
       <select class="filter-select" *ngIf="departmentOptions().length"
               [ngModel]="filterDepartment()" (ngModelChange)="filterDepartment.set($event)"
               [attr.aria-label]="'common.department' | t">
@@ -89,7 +100,7 @@
           <thead>
             <tr>
               <th>{{ 'common.ticket' | t }}</th>
-              <th>{{ 'common.project' | t }}</th>
+              <th>{{ 'dash.route' | t }}</th>
               <th>{{ 'common.priority' | t }}</th>
               <th>{{ 'common.status' | t }}</th>
               <th>{{ 'common.assigned' | t }}</th>
@@ -113,7 +124,16 @@
                 </div>
               </td>
               <td class="td-org">
-                <span class="org-chip"><i class="bi bi-kanban me-1"></i>{{ ticket.projects?.name ?? '—' }}</span>
+                <div class="route-cell">
+                  <span class="org-chip" *ngIf="!ticket.from_department"><i class="bi bi-kanban me-1"></i><bdi>{{ sourceLabel(ticket) || '—' }}</bdi></span>
+                  <span class="dept-pill" *ngIf="ticket.from_department" [style.--pill-color]="ticket.from_department.color">
+                    <bdi>{{ sdSvc.label(ticket.from_department) }}</bdi>
+                  </span>
+                  <i class="bi bi-arrow-right route-arrow flip-rtl"></i>
+                  <span class="dept-pill" [style.--pill-color]="ticket.to_department?.color ?? '#4f46e5'">
+                    <bdi>{{ sdSvc.label(ticket.to_department) }}</bdi>
+                  </span>
+                </div>
               </td>
               <td><app-priority-badge [priority]="ticket.priority" /></td>
               <td><app-status-badge [status]="ticket.status" /></td>

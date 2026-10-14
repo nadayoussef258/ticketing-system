@@ -1,0 +1,162 @@
+<app-navbar [orgName]="deptName()" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 820px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/dept/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left flip-rtl"></i></a>
+      <h1 class="page-title mb-0">{{ 'detail.title' | t }}</h1>
+    </div>
+
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border" style="color:#4f46e5;"></div>
+    </div>
+
+    <div *ngIf="!loading() && notFound()" class="info-card p-5 text-center">
+      <i class="bi bi-lock" style="font-size:2rem; color:#9ca3af;"></i>
+      <p class="mt-2 mb-3" style="color:#6b7280;">{{ 'detail.notAvailableIt' | t }}</p>
+      <a routerLink="/dept/dashboard" class="btn-archive">{{ 'detail.backToTickets' | t }}</a>
+    </div>
+
+    <ng-container *ngIf="!loading() && ticket() as t">
+
+      <!-- Ticket -->
+      <div class="info-card p-4 mb-3">
+        <div class="route-strip mb-3">
+          <span class="route-node" [style.--node-color]="t.from_department?.color ?? t.projects?.color ?? '#9ca3af'">
+            <span class="route-caption">{{ 'detail.from' | t }}</span>
+            <bdi class="route-name">{{ sourceLabel(t) }}</bdi>
+          </span>
+          <i class="bi bi-arrow-right route-arrow flip-rtl"></i>
+          <span class="route-node" [style.--node-color]="t.to_department?.color ?? '#4f46e5'">
+            <span class="route-caption">{{ 'detail.sentTo' | t }}</span>
+            <bdi class="route-name">{{ sdSvc.label(t.to_department) }}</bdi>
+          </span>
+        </div>
+
+        <h2 class="ticket-heading mb-3" dir="auto">{{ t.subject }}</h2>
+        <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+          <app-priority-badge [priority]="t.priority" />
+          <app-status-badge [status]="t.status" />
+          <span class="cat-chip"><i class="bi bi-tag"></i>{{ sdSvc.categoryLabel(t.to_department_id, t.category) }}</span>
+          <span class="ticket-date-label">{{ t.created_at | tdate: 'full' }}</span>
+        </div>
+        <p class="ticket-desc" dir="auto">{{ t.description }}</p>
+        <div *ngIf="t.attachments?.length" class="reply-attachments mb-3">
+          <a *ngFor="let url of t.attachments; let i = index" [href]="url" target="_blank" rel="noopener" class="attachment-thumb">
+            <i class="bi bi-paperclip"></i> {{ 'common.attachmentN' | t: { n: i + 1 } }}
+          </a>
+        </div>
+        <div class="requester-line">
+          <span><i class="bi bi-hash"></i><bdi>{{ t.ticket_number }}</bdi></span>
+          <span><i class="bi bi-person"></i><bdi>{{ t.requester_name }}</bdi></span>
+          <span *ngIf="t.department"><i class="bi bi-diagram-3"></i>{{ deptSvc.label(t.department) }}</span>
+        </div>
+
+        <div class="archive-row mt-3" *ngIf="t.archived_at || canArchive">
+          <div class="archived-banner flex-grow-1" *ngIf="t.archived_at">
+            <i class="bi bi-archive"></i>{{ 'detail.archivedOn' | t: { date: (t.archived_at | tdate: 'medium') } }}
+          </div>
+          <button type="button" class="btn-archive" (click)="toggleArchive()" [disabled]="archiving()">
+            <span *ngIf="archiving()" class="spinner-border spinner-border-sm"></span>
+            <i class="bi" *ngIf="!archiving()" [class.bi-archive]="!t.archived_at" [class.bi-box-arrow-up]="!!t.archived_at"></i>
+            {{ (t.archived_at ? 'archive.restore' : 'archive.archive') | t }}
+          </button>
+        </div>
+        <div class="file-error" *ngIf="archiveError()">{{ archiveError() }}</div>
+      </div>
+
+      <!-- Manage (receiving department) -->
+      <div class="info-card p-4 mb-3" *ngIf="side() === 'inbox'">
+        <div class="section-label">{{ 'detail.manage' | t }}</div>
+        <div class="manage-row">
+          <div class="manage-field">
+            <label class="manage-label" for="statusSel">{{ 'common.status' | t }}</label>
+            <div class="d-flex gap-2">
+              <select id="statusSel" class="manage-select" [(ngModel)]="statusDraft" [disabled]="savingStatus()">
+                <option *ngFor="let s of STATUSES" [value]="s">{{ ('status.' + s) | t }}</option>
+              </select>
+              <button type="button" class="btn-send" (click)="saveStatus()"
+                      [disabled]="savingStatus() || statusDraft === t.status">
+                <span *ngIf="savingStatus()" class="spinner-border spinner-border-sm"></span>
+                {{ 'common.save' | t }}
+              </button>
+            </div>
+          </div>
+          <div class="manage-field manage-transfer" *ngIf="canTransfer">
+            <span class="manage-label">&nbsp;</span>
+            <button type="button" class="btn-transfer" (click)="showTransfer.set(true)">
+              <i class="bi bi-arrow-left-right"></i>{{ 'detail.transfer' | t }}
+            </button>
+          </div>
+        </div>
+        <div class="save-success mt-3" *ngIf="statusMsg()"><i class="bi bi-check-circle me-1"></i>{{ statusMsg() }}</div>
+        <div class="save-error mt-3" *ngIf="statusError()"><i class="bi bi-x-circle me-1"></i>{{ statusError() }}</div>
+      </div>
+
+      <!-- Conversation -->
+      <div class="info-card p-4 mb-3">
+        <div class="section-label">{{ 'detail.conversation' | t }}</div>
+
+        <div *ngIf="comments().length === 0" class="empty-replies">
+          <i class="bi bi-chat-square-dots"></i>
+          <p>{{ side() === 'sent'
+                ? ('detail.noRepliesFrom' | t: { name: sdSvc.label(t.to_department) })
+                : ('detail.noReplies' | t) }}</p>
+        </div>
+
+        <div *ngFor="let comment of comments()" class="reply-item mb-3"
+          [class.reply-it]="comment.is_agent_reply"
+          [class.reply-client]="!comment.is_agent_reply">
+          <div class="reply-bubble">
+            <div class="reply-sender">
+              {{ comment.is_agent_reply ? '🛡️' : '👤' }} <bdi>{{ senderLabel(comment) }}</bdi>
+              <span class="reply-time">{{ comment.created_at | tdate: 'time' }}</span>
+            </div>
+            <p class="reply-text" dir="auto">{{ comment.content }}</p>
+            <div *ngIf="comment.attachments?.length" class="reply-attachments mt-2">
+              <a *ngFor="let url of comment.attachments; let i = index" [href]="url" target="_blank" rel="noopener" class="attachment-thumb">
+                <i class="bi bi-paperclip"></i> {{ 'common.attachmentN' | t: { n: i + 1 } }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reply -->
+      <div class="info-card p-4" *ngIf="canReply">
+        <div class="section-label">{{ 'detail.addReply' | t }}</div>
+
+        <textarea class="reply-input mb-3" rows="3" dir="auto"
+          [placeholder]="(side() === 'inbox' ? 'detail.typeResponse' : 'detail.typeMessage') | t"
+          [(ngModel)]="replyText"></textarea>
+
+        <label class="file-drop mb-2">
+          <i class="bi bi-paperclip"></i>
+          <span>{{ 'common.attachFiles' | t }}</span>
+          <input type="file" accept="image/*,video/*,application/pdf" multiple hidden (change)="onReplyFileSelect($event)" />
+        </label>
+        <div class="file-error" *ngIf="replyFileError()">{{ replyFileError() }}</div>
+        <div class="file-list mb-3" *ngIf="replyFiles.length">
+          <div class="file-chip" *ngFor="let f of replyFiles; let i = index">
+            <i class="bi"
+               [class.bi-image]="f.type.startsWith('image/')"
+               [class.bi-camera-video]="f.type.startsWith('video/')"
+               [class.bi-file-earmark-pdf]="f.type === 'application/pdf'"></i>
+            <span class="file-name">{{ f.name }}</span>
+            <button type="button" class="file-remove" (click)="removeReplyFile(i)" [attr.aria-label]="'common.remove' | t"><i class="bi bi-x"></i></button>
+          </div>
+        </div>
+
+        <button class="btn-send" (click)="sendReply()" [disabled]="sending() || !replyText.trim()">
+          <span *ngIf="sending()" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-send" *ngIf="!sending()"></i>
+          {{ (sending() ? 'common.sending' : 'common.sendReply') | t }}
+        </button>
+      </div>
+
+      <app-transfer-dialog *ngIf="showTransfer()" [ticket]="t"
+        (transferred)="onTransferred($event)" (closed)="showTransfer.set(false)" />
+    </ng-container>
+  </div>
+</div>

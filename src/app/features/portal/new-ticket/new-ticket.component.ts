@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
@@ -8,11 +8,24 @@ import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { DepartmentService } from '../../../core/services/Department.service';
+import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { NavbarComponent } from '../../../shared components/navbar/navbar.component';
-import { Department, TicketCategory, TicketPriority } from '../../../core/models';
+import { Department, Ticket, TicketCategory, TicketPriority } from '../../../core/models';
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 
+/** Icons kept for the IT categories; other departments get a generic one. */
+const CATEGORY_ICONS: Record<string, string> = {
+  hardware: '🖥️', software: '💾', network: '🌐', access: '🔑',
+  email: '✉️', printer: '🖨️', other: '📋',
+};
+
+/**
+ * One form for everyone who can open a ticket:
+ *  - client  (project account)   → /portal/new-ticket
+ *  - dept    (Finance, Marketing…) → /dept/new-ticket
+ *  - admin   (IT admin)          → /admin/new-ticket
+ */
 @Component({
   selector: 'app-new-ticket',
   imports: [FormsModule, NgIf, NgFor, RouterLink, NavbarComponent, TranslatePipe],
@@ -22,6 +35,7 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 export class NewTicketComponent implements OnInit {
 
   form: {
+    to_department_id: string;
     requester_name: string;
     department_id: string;
     subject: string;
@@ -29,7 +43,8 @@ export class NewTicketComponent implements OnInit {
     priority: TicketPriority;
     category: TicketCategory;
   } = {
-    requester_name: '',   // the project account is shared, so the person types their name every time
+    to_department_id: '',
+    requester_name: '',   // shared accounts: the person types their name every time
     department_id: '',
     subject: '',
     description: '',
@@ -37,8 +52,23 @@ export class NewTicketComponent implements OnInit {
     category: 'other',
   };
 
+  readonly mode = computed<'client' | 'dept' | 'admin'>(() =>
+    this.auth.isAdmin() ? 'admin' : this.auth.isDept() ? 'dept' : 'client');
+
+  /** Department the ticket is sent FROM (null for client projects). */
+  readonly myDepartmentId = computed<string | null>(() => {
+    if (this.mode() === 'dept') return this.auth.user()?.service_department_id ?? null;
+    if (this.mode() === 'admin') return this.sdSvc.head()?.id ?? null;
+    return null;
+  });
+
+  /** Departments this user can send to. */
+  readonly targets = computed(() =>
+    this.sdSvc.targets(this.mode() === 'client' ? [] : [this.myDepartmentId()]));
+
   departments = signal<Department[]>([]);
   departmentsLoading = signal(true);
+  targetsLoading = signal(true);
 
   selectedFiles: File[] = [];
   fileError = signal('');
@@ -48,6 +78,7 @@ export class NewTicketComponent implements OnInit {
   constructor(
     public auth: AuthService,
     public deptSvc: DepartmentService,
+    public sdSvc: ServiceDepartmentService,
     private ticketSvc: TicketService,
     private supabase: SupabaseService,
     private router: Router,
@@ -55,30 +86,78 @@ export class NewTicketComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    const projectId = this.auth.user()?.project_id;
+    const user = this.auth.user();
+    if (this.mode() === 'admin' && user) this.form.requester_name = user.full_name;
+
+    // Departments that can receive tickets
+    try {
+      await this.sdSvc.load(true);
+      // Clients keep sending to IT by default, as before
+      if (this.mode() === 'client') this.form.to_department_id = this.sdSvc.head()?.id ?? '';
+      else if (this.targets().length === 1) this.form.to_department_id = this.targets()[0].id;
+    } catch (err) {
+      console.warn('Could not load departments:', err);
+    } finally {
+      this.targetsLoading.set(false);
+    }
+
+    // The requester's own department inside a client project
+    const projectId = this.mode() === 'client' ? user?.project_id : null;
     if (!projectId) { this.departmentsLoading.set(false); return; }
     try {
       this.departments.set(await this.deptSvc.listByProject(projectId, true));
     } catch (err) {
-      console.warn('Could not load departments:', err);
+      console.warn('Could not load project departments:', err);
     } finally {
       this.departmentsLoading.set(false);
     }
   }
 
-  /** Department is required only when the project has departments set up. */
+  get orgName(): string {
+    const u = this.auth.user();
+    if (this.mode() === 'admin') return 'IT Team';
+    if (this.mode() === 'dept') return this.sdSvc.label(u?.service_department);
+    return u?.project_name ?? '';
+  }
+
+  get backUrl(): string {
+    return this.auth.homeUrl();
+  }
+
+  /** Clients with only IT available don't need to choose. */
+  get showTargetPicker(): boolean {
+    return this.mode() !== 'client' || this.targets().length > 1;
+  }
+
+  get categories() {
+    return this.sdSvc.categoriesOf(this.form.to_department_id);
+  }
+
+  categoryIcon(code: string): string {
+    return CATEGORY_ICONS[code] ?? '📌';
+  }
+
+  /** Categories differ per department: keep the choice if it exists, else "other". */
+  onTargetChange() {
+    if (!this.categories.some(c => c.code === this.form.category)) this.form.category = 'other';
+  }
+
+  /** Project department is required only when the project has departments set up. */
   get needsDepartment(): boolean {
-    return this.departments().length > 0;
+    return this.mode() === 'client' && this.departments().length > 0;
   }
 
   get canSubmit(): boolean {
     const f = this.form;
     return f.requester_name.trim().length >= 2
+      && !!f.to_department_id
+      && this.categories.some(c => c.code === f.category)
       && f.subject.trim().length >= 5
       && f.description.trim().length >= 10
       && (!this.needsDepartment || !!f.department_id)
       && !this.loading()
-      && !this.departmentsLoading();
+      && !this.departmentsLoading()
+      && !this.targetsLoading();
   }
 
   onFileSelect(event: Event) {
@@ -128,10 +207,17 @@ export class NewTicketComponent implements OnInit {
   async onSubmit() {
     const user = this.auth.user();
     if (!user || !this.canSubmit) return;
-    if (!user.project_id) {
+
+    const mode = this.mode();
+    if (mode === 'client' && !user.project_id) {
       this.error.set(this.i18n.t('newTicket.noProject'));
       return;
     }
+    if (mode !== 'client' && !this.myDepartmentId()) {
+      this.error.set(this.i18n.t('newTicket.noDeptAccount'));
+      return;
+    }
+
     this.loading.set(true);
     this.error.set('');
     try {
@@ -140,23 +226,29 @@ export class NewTicketComponent implements OnInit {
       const ticketId = crypto.randomUUID();
       const attachments = this.selectedFiles.length ? await this.uploadAttachments(ticketId) : [];
 
-      const ticket = await this.ticketSvc.createTicket(
-        {
-          id: ticketId,
-          requester_name: this.form.requester_name.trim(),
-          department_id: this.form.department_id || null,
-          subject: this.form.subject.trim(),
-          description: this.form.description.trim(),
-          priority: this.form.priority,
-          category: this.form.category,
-          project_id: user.project_id,
-          requester_email: user.email,
-          attachments,
-        },
-        user.id
-      );
+      const payload: Partial<Ticket> = {
+        id: ticketId,
+        to_department_id: this.form.to_department_id,
+        requester_name: this.form.requester_name.trim(),
+        subject: this.form.subject.trim(),
+        description: this.form.description.trim(),
+        priority: this.form.priority,
+        category: this.form.category,
+        requester_email: user.email,
+        attachments,
+      };
+      if (mode === 'client') {
+        payload.project_id = user.project_id;
+        payload.department_id = this.form.department_id || null;
+      } else {
+        payload.project_id = null;
+        payload.from_department_id = this.myDepartmentId();
+      }
 
-      this.router.navigate(['/portal/ticket', ticket.id]);
+      const ticket = await this.ticketSvc.createTicket(payload, user.id);
+
+      const base = mode === 'admin' ? '/admin/ticket' : mode === 'dept' ? '/dept/ticket' : '/portal/ticket';
+      this.router.navigate([base, ticket.id]);
     } catch (err: any) {
       this.error.set(err?.message ?? this.i18n.t('newTicket.failed'));
     } finally {

@@ -58,13 +58,14 @@ export class TeamService {
     return (data ?? []) as ManagedUser[];
   }
 
-  /** Create an IT team member, or a client account linked to a project. */
+  /** Create an IT team member, a client account linked to a project, or a department account. */
   async createUser(params: {
     email: string;
     password: string;
     full_name: string;
-    role: 'it_staff' | 'project_admin';
+    role: 'it_staff' | 'project_admin' | 'dept_user';
     project_id?: string | null;
+    service_department_id?: string | null;
   }): Promise<{ user_id: string }> {
     return this.callAdminUsers({ action: 'create', ...params });
   }

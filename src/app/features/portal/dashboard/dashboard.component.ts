@@ -5,6 +5,7 @@ import { TranslatePipe, TranslateDatePipe } from '../../../core/i18n/t.pipe';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DepartmentService } from '../../../core/services/Department.service';
+import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Ticket } from '../../../core/models';
 import { NavbarComponent } from '../../../shared components/navbar/navbar.component';
@@ -43,6 +44,7 @@ export class PortalDashboardComponent implements OnInit {
     public auth: AuthService,
     private ticketSvc: TicketService,
     public deptSvc: DepartmentService,
+    public sdSvc: ServiceDepartmentService,
     public notificationSvc: NotificationService,
   ) {}
 

@@ -1,0 +1,252 @@
+<!-- features/admin/departments/departments.component.html -->
+<app-navbar orgName="IT Team" />
+
+<div class="page-bg min-vh-100">
+  <div class="container-fluid px-4 py-4" style="max-width: 1100px; margin: 0 auto;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a routerLink="/admin/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left flip-rtl"></i></a>
+      <div>
+        <h1 class="page-title mb-0">{{ 'sdept.title' | t }}</h1>
+        <p class="page-sub mb-0">{{ 'sdept.subtitle' | t }}</p>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div *ngIf="toast()" class="mb-3" [class.toast-success]="!toastError()" [class.toast-error]="toastError()" role="status">
+      <i class="bi me-2" [class.bi-check-circle]="!toastError()" [class.bi-x-circle]="toastError()"></i>{{ toast() }}
+    </div>
+
+    <!-- Create -->
+    <div class="panel-card p-4 mb-4">
+      <div class="section-label mb-3">{{ 'sdept.create' | t }}</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+          <label class="field-label" for="nd-ar">{{ 'sdept.nameAr' | t }} <span class="text-danger">*</span></label>
+          <input id="nd-ar" type="text" class="field-input" dir="rtl" lang="ar" maxlength="100"
+                 [placeholder]="'sdept.nameArPh' | t" [(ngModel)]="newDept.name_ar" />
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="field-label" for="nd-en">{{ 'sdept.nameEn' | t }} <span class="text-danger">*</span></label>
+          <input id="nd-en" type="text" class="field-input" dir="ltr" maxlength="100"
+                 [placeholder]="'sdept.nameEnPh' | t" [(ngModel)]="newDept.name_en" />
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="field-label" for="nd-code">{{ 'projects.code' | t }} <span class="text-danger">*</span></label>
+          <input id="nd-code" type="text" class="field-input" dir="ltr" maxlength="20"
+                 [placeholder]="'sdept.codePh' | t" [(ngModel)]="newDept.code"
+                 (input)="newDept.code = newDept.code.toUpperCase()" />
+        </div>
+        <div class="col-6 col-md-4">
+          <label class="field-label">{{ 'projects.color' | t }}</label>
+          <div class="color-picker-row">
+            <button type="button" *ngFor="let c of PRESET_COLORS" class="color-dot"
+                    [style.background]="c" [class.selected]="newDept.color === c"
+                    [attr.aria-label]="c" (click)="newDept.color = c"></button>
+          </div>
+        </div>
+        <div class="col-12">
+          <p class="field-hint mt-0 mb-2">{{ 'projects.codeHint' | t }}</p>
+          <button class="btn-primary" (click)="createDepartment()" [disabled]="saving() || !canCreate()">
+            <span *ngIf="saving()" class="spinner-border spinner-border-sm"></span>
+            <i class="bi bi-plus-lg" *ngIf="!saving()"></i>
+            {{ (saving() ? 'sdept.creating' : 'sdept.createBtn') | t }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border" style="color:#4f46e5;"></div>
+    </div>
+
+    <!-- Departments -->
+    <div class="row g-3" *ngIf="!loading()">
+      <div class="col-12 col-md-6 col-lg-4" *ngFor="let d of departments()">
+        <div class="project-card dept-card" [class.archived]="!d.is_active">
+          <div class="project-header" [style.background]="d.color">
+            <div class="project-code" dir="ltr">{{ d.code }}</div>
+            <span class="project-status-pill" [class.archived]="!d.is_active">
+              <ng-container *ngIf="d.is_head"><i class="bi bi-star-fill me-1"></i>{{ 'sdept.head' | t }}</ng-container>
+              <ng-container *ngIf="!d.is_head">{{ (d.is_active ? 'projects.status.active' : 'common.inactive') | t }}</ng-container>
+            </span>
+          </div>
+
+          <div class="project-body">
+            <h3 class="project-name" dir="auto">{{ sdSvc.label(d) }}</h3>
+            <p class="project-desc dept-alt" dir="auto">{{ secondaryName(d) }}</p>
+            <div class="project-meta mb-2">
+              <span class="meta-chip"><i class="bi bi-tags me-1"></i>{{ 'sdept.categoriesCount' | t: { n: activeCategoryCount(d) } }}</span>
+              <span class="meta-chip" *ngIf="!d.is_head"><i class="bi bi-person me-1"></i>{{ 'sdept.accountsCount' | t: { n: accountsOf(d).length } }}</span>
+            </div>
+
+            <ul class="acct-list" *ngIf="!d.is_head && accountsOf(d).length">
+              <li *ngFor="let u of accountsOf(d)" [class.disabled]="!!u.banned_until">
+                <i class="bi bi-person-circle"></i>
+                <span class="acct-email" dir="ltr">{{ u.email }}</span>
+                <span class="acct-off" *ngIf="u.banned_until">{{ 'team.disabled' | t }}</span>
+              </li>
+            </ul>
+            <p class="acct-hint" *ngIf="d.is_head">{{ 'sdept.itAccountsHint' | t }}</p>
+            <p class="acct-hint" *ngIf="!d.is_head && accountsOf(d).length === 0">{{ 'sdept.noAccounts' | t }}</p>
+          </div>
+
+          <div class="project-actions">
+            <button class="action-btn" [title]="'sdept.categories' | t" [attr.aria-label]="'sdept.categories' | t" (click)="openCategories(d)">
+              <i class="bi bi-tags"></i>
+            </button>
+            <button class="action-btn" *ngIf="!d.is_head" [title]="'sdept.addAccount' | t" [attr.aria-label]="'sdept.addAccount' | t"
+                    (click)="openAddAccount(d)" [disabled]="!d.is_active">
+              <i class="bi bi-person-plus"></i>
+            </button>
+            <button class="action-btn" [title]="'common.edit' | t" [attr.aria-label]="'common.edit' | t" (click)="openEdit(d)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="action-btn" *ngIf="!d.is_head"
+                    [title]="(d.is_active ? 'common.deactivate' : 'common.activate') | t"
+                    [attr.aria-label]="(d.is_active ? 'common.deactivate' : 'common.activate') | t"
+                    (click)="toggleActive(d)">
+              <i class="bi" [class.bi-toggle-on]="d.is_active" [class.bi-toggle-off]="!d.is_active"
+                 [style.color]="d.is_active ? '#059669' : '#9ca3af'"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" *ngIf="editTarget()" (click)="editTarget.set(null)">
+  <div class="modal-box" style="max-width:520px;" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <p class="modal-title mb-3">{{ 'sdept.edit' | t }}</p>
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-sm-6">
+        <label class="field-label">{{ 'sdept.nameAr' | t }}</label>
+        <input type="text" class="field-input" dir="rtl" lang="ar" maxlength="100" [(ngModel)]="editForm.name_ar" />
+      </div>
+      <div class="col-12 col-sm-6">
+        <label class="field-label">{{ 'sdept.nameEn' | t }}</label>
+        <input type="text" class="field-input" dir="ltr" maxlength="100" [(ngModel)]="editForm.name_en" />
+      </div>
+      <div class="col-5">
+        <label class="field-label">{{ 'projects.code' | t }}</label>
+        <input type="text" class="field-input" dir="ltr" maxlength="20" [(ngModel)]="editForm.code"
+               (input)="editForm.code = editForm.code.toUpperCase()" />
+      </div>
+      <div class="col-7">
+        <label class="field-label">{{ 'projects.color' | t }}</label>
+        <div class="color-picker-row">
+          <button type="button" *ngFor="let c of PRESET_COLORS" class="color-dot"
+                  [style.background]="c" [class.selected]="editForm.color === c"
+                  [attr.aria-label]="c" (click)="editForm.color = c"></button>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-primary" (click)="saveEdit()" [disabled]="saving() || !canSaveEdit()">
+        <span *ngIf="saving()" class="spinner-border spinner-border-sm"></span>{{ 'common.save' | t }}
+      </button>
+      <button class="btn-secondary" (click)="editTarget.set(null)">{{ 'common.cancel' | t }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Categories modal -->
+<div class="modal-overlay" *ngIf="catTarget() as d" (click)="catTarget.set(null)">
+  <div class="modal-box dept-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-1">
+      <p class="modal-title">{{ 'sdept.categories' | t }} — <strong dir="auto">{{ sdSvc.label(d) }}</strong></p>
+      <button type="button" class="dept-close" (click)="catTarget.set(null)" [attr.aria-label]="'common.close' | t"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <p class="field-hint mb-3">{{ 'sdept.categoriesHint' | t: { name: sdSvc.label(d) } }}</p>
+
+    <div class="dept-add">
+      <input type="text" class="field-input" dir="rtl" lang="ar" maxlength="100"
+             [placeholder]="'sdept.catArPh' | t" [(ngModel)]="newCat.name_ar" (keyup.enter)="addCategory()" />
+      <input type="text" class="field-input" dir="ltr" maxlength="100"
+             [placeholder]="'sdept.catEnPh' | t" [(ngModel)]="newCat.name_en" (keyup.enter)="addCategory()" />
+      <button class="btn-primary" (click)="addCategory()" [disabled]="catBusy() || !canAddCategory()">
+        <i class="bi bi-plus-lg"></i>{{ 'common.add' | t }}
+      </button>
+    </div>
+
+    <div class="dept-msg dept-error" *ngIf="catError()"><i class="bi bi-x-circle me-1"></i>{{ catError() }}</div>
+
+    <ul class="dept-list">
+      <li *ngFor="let c of categoriesOf(d)" class="dept-row" [class.inactive]="!c.is_active">
+        <ng-container *ngIf="editingCatId() !== c.id; else catEditRow">
+          <div class="dept-names">
+            <span class="dept-ar" dir="auto" lang="ar">{{ c.name_ar }}</span>
+            <span class="dept-en" dir="ltr">{{ c.name_en }}</span>
+          </div>
+          <span class="dept-badge" *ngIf="c.code === 'other'">{{ 'sdept.catDefault' | t }}</span>
+          <span class="dept-badge" *ngIf="!c.is_active">{{ 'common.inactive' | t }}</span>
+          <div class="dept-actions">
+            <button class="action-btn" [title]="'common.edit' | t" [attr.aria-label]="'common.edit' | t"
+                    (click)="startCatEdit(c)" [disabled]="catBusy()">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="action-btn" *ngIf="c.code !== 'other'"
+                    [title]="(c.is_active ? 'common.deactivate' : 'common.activate') | t"
+                    [attr.aria-label]="(c.is_active ? 'common.deactivate' : 'common.activate') | t"
+                    (click)="toggleCategory(c)" [disabled]="catBusy()">
+              <i class="bi" [class.bi-toggle-on]="c.is_active" [class.bi-toggle-off]="!c.is_active"
+                 [style.color]="c.is_active ? '#059669' : '#9ca3af'"></i>
+            </button>
+          </div>
+        </ng-container>
+
+        <ng-template #catEditRow>
+          <div class="dept-edit">
+            <input type="text" class="field-input" dir="rtl" lang="ar" maxlength="100" [(ngModel)]="editCat.name_ar" />
+            <input type="text" class="field-input" dir="ltr" maxlength="100" [(ngModel)]="editCat.name_en" (keyup.enter)="saveCatEdit(c)" />
+            <button class="btn-primary" (click)="saveCatEdit(c)" [disabled]="catBusy()">{{ 'common.save' | t }}</button>
+            <button class="btn-secondary" (click)="editingCatId.set(null)">{{ 'common.cancel' | t }}</button>
+          </div>
+        </ng-template>
+      </li>
+    </ul>
+
+    <div class="d-flex justify-content-end mt-3">
+      <button class="btn-secondary" (click)="catTarget.set(null)">{{ 'common.done' | t }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add account modal -->
+<div class="modal-overlay" *ngIf="accountTarget() as d" (click)="accountTarget.set(null)">
+  <div class="modal-box" style="max-width:480px;" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <p class="modal-title">{{ 'sdept.addAccountTo' | t }} <strong dir="auto">{{ sdSvc.label(d) }}</strong></p>
+    <p class="field-hint mb-3">{{ 'sdept.addAccountHint' | t: { name: sdSvc.label(d) } }}</p>
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <label class="field-label" for="acc-name">{{ 'common.fullName' | t }}</label>
+        <input id="acc-name" type="text" class="field-input" dir="auto" [placeholder]="'common.optional' | t" [(ngModel)]="accountForm.full_name" />
+      </div>
+      <div class="col-12">
+        <label class="field-label" for="acc-email">{{ 'common.email' | t }} <span class="text-danger">*</span></label>
+        <input id="acc-email" type="email" class="field-input" dir="ltr" placeholder="marketing@company.com" [(ngModel)]="accountForm.email" />
+      </div>
+      <div class="col-12" style="position:relative;">
+        <label class="field-label" for="acc-pass">{{ 'common.password' | t }} <span class="text-danger">*</span></label>
+        <input id="acc-pass" [type]="showAccountPassword ? 'text' : 'password'" class="field-input" dir="ltr"
+               [placeholder]="'common.passwordMin' | t" [(ngModel)]="accountForm.password" style="padding-inline-end:40px;" />
+        <button type="button" class="eye-toggle" style="top:32px;" (click)="showAccountPassword = !showAccountPassword"
+                [attr.aria-label]="(showAccountPassword ? 'common.hidePassword' : 'common.showPassword') | t">
+          <i class="bi" [class.bi-eye]="!showAccountPassword" [class.bi-eye-slash]="showAccountPassword"></i>
+        </button>
+      </div>
+    </div>
+    <p class="field-hint mb-3"><i class="bi bi-info-circle me-1"></i>{{ 'sdept.manageInTeam' | t }}</p>
+    <div class="d-flex gap-2">
+      <button class="btn-primary" (click)="submitAddAccount()" [disabled]="addingAccount() || !canAddAccount()">
+        <span *ngIf="addingAccount()" class="spinner-border spinner-border-sm"></span>
+        {{ (addingAccount() ? 'common.adding' : 'projects.addAccountBtn') | t }}
+      </button>
+      <button class="btn-secondary" (click)="accountTarget.set(null)">{{ 'common.cancel' | t }}</button>
+    </div>
+  </div>
+</div>

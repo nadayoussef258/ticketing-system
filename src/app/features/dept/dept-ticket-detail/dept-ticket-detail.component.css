@@ -1,0 +1,39 @@
+/* Department ticket page — builds on the shared ticket detail styles */
+
+/* From → To strip */
+.route-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.route-node {
+  --node-color: #9ca3af;
+  display: inline-flex; flex-direction: column; gap: 1px;
+  min-width: 0; max-width: 260px;
+  padding: 6px 12px 6px 10px;
+  border-inline-start: 3px solid var(--node-color);
+  background: color-mix(in srgb, var(--node-color) 8%, #fff);
+  border-radius: 8px;
+}
+.route-caption { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #9ca3af; }
+.route-name { font-size: 0.86rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.route-arrow { color: #c4c8d4; font-size: 1rem; }
+
+.cat-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #f3f4f6; color: #4b5563; border-radius: 99px;
+  padding: 2px 10px; font-size: 0.72rem; font-weight: 600;
+}
+
+/* Manage panel */
+.manage-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+.manage-field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 260px; }
+.manage-transfer { flex: 0 0 auto; }
+.manage-label { font-size: 0.79rem; font-weight: 600; color: #374151; }
+
+.btn-transfer {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #fff; color: #4f46e5;
+  border: 1px solid #c7d2fe; border-radius: 10px;
+  padding: 8px 16px; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-transfer:hover { background: #eef2ff; border-color: #a5b4fc; }
+
+[dir="rtl"] .flip-rtl { transform: scaleX(-1); }

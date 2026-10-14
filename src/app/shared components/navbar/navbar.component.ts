@@ -42,6 +42,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       case 'it_staff':      return this.i18n.t('role.staff');
       case 'project_admin':
       case 'user':          return this.i18n.t('role.client');
+      case 'dept_user':     return this.i18n.t('role.dept');
       default:              return '';
     }
   }
@@ -52,9 +53,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
    * Show a translated heading + the useful part (subject / ticket number).
    */
   notifTitle(n: AppNotification): string {
-    const tail = this.stripPrefix(n.title, ['New ticket: ', 'Ticket assigned to you: ', 'New reply on ']);
-    const key = n.type === 'new_ticket' ? 'notif.newTicket'
-              : n.type === 'assigned'   ? 'notif.assigned'
+    const tail = this.stripPrefix(n.title, ['New ticket: ', 'Ticket assigned to you: ', 'Ticket transferred to your department: ', 'New reply on ']);
+    const key = n.type === 'new_ticket'  ? 'notif.newTicket'
+              : n.type === 'assigned'    ? 'notif.assigned'
+              : n.type === 'transferred' ? 'notif.transferred'
               : 'notif.newReply';
     return `${this.i18n.t(key)}: ${tail}`;
   }
@@ -62,6 +64,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
   notifDetail(n: AppNotification): string {
     if (!n.body) return '';
     if (n.type === 'new_comment') return n.body.replace(' replied: ', ': ');
+    if (n.type === 'transferred') {
+      const m = /^Transferred from (.*?): (.*)$/s.exec(n.body);
+      if (m) return this.i18n.t('notif.transferredFrom', { from: m[1], subject: m[2] });
+    }
     if (n.type === 'new_ticket') {
       const m = /^(.*) opened a new (low|medium|high|critical) priority ticket\.$/.exec(n.body);
       if (m) return this.i18n.t('notif.openedBy', { name: m[1], priority: this.i18n.t('priority.' + m[2]) });
@@ -79,6 +85,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.auth.isItTeam();
   }
 
+  /** Department account (Finance, Marketing…). */
+  get isDeptRole(): boolean {
+    return this.auth.isDept();
+  }
+
+  /** The bell is shown to the IT side and to department accounts. */
+  get showBell(): boolean {
+    return this.auth.isItTeam() || this.auth.isDept();
+  }
+
   toggleDropdown() {
     this.showDropdown = !this.showDropdown;
   }
@@ -87,7 +103,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (!n.is_read) await this.notificationSvc.markAsRead(n.id);
     this.showDropdown = false;
     if (n.ticket_id) {
-      const base = this.isAdminRole ? '/admin/ticket' : '/portal/ticket';
+      const base = this.isAdminRole ? '/admin/ticket' : this.isDeptRole ? '/dept/ticket' : '/portal/ticket';
       this.router.navigate([base, n.ticket_id]);
     }
   }

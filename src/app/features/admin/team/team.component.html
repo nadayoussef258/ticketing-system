@@ -64,6 +64,9 @@
           <button type="button" class="seg-tab" [class.active]="tab() === 'clients'" (click)="tab.set('clients')">
             <i class="bi bi-building"></i>{{ 'team.tabClients' | t }} <span class="seg-count">{{ clientUsers().length }}</span>
           </button>
+          <button type="button" class="seg-tab" [class.active]="tab() === 'depts'" (click)="tab.set('depts')">
+            <i class="bi bi-diagram-3"></i>{{ 'team.tabDepts' | t }} <span class="seg-count">{{ deptUsers().length }}</span>
+          </button>
         </div>
       </div>
       <table class="table panel-table mb-0">
@@ -89,14 +92,17 @@
             <td>
               <span [class.badge-admin]="u.user_role === 'admin'"
                     [class.badge-staff]="u.user_role === 'it_staff'"
-                    [class.badge-user]="u.user_role === 'project_admin' || u.user_role === 'user'">
+                    [class.badge-user]="u.user_role === 'project_admin' || u.user_role === 'user'"
+                    [class.badge-dept]="u.user_role === 'dept_user'">
                 <i class="bi me-1"
                    [class.bi-shield-check]="u.user_role === 'admin'"
                    [class.bi-person-gear]="u.user_role === 'it_staff'"
-                   [class.bi-building]="u.user_role === 'project_admin' || u.user_role === 'user'"></i>
+                   [class.bi-building]="u.user_role === 'project_admin' || u.user_role === 'user'"
+                   [class.bi-diagram-3]="u.user_role === 'dept_user'"></i>
                 {{ roleLabel(u.user_role) }}
               </span>
               <div class="project-hint" *ngIf="u.project_name">{{ u.project_name }}</div>
+              <div class="project-hint" *ngIf="u.service_department_name" dir="auto">{{ u.service_department_name }}</div>
             </td>
             <td>
               <span [class.badge-active]="!u.banned_until" [class.badge-inactive]="!!u.banned_until">
@@ -122,7 +128,7 @@
           <tr *ngIf="visibleUsers().length === 0">
             <td colspan="6" class="text-center py-5 text-muted">
               <i class="bi bi-people" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
-              {{ (tab() === 'it' ? 'team.emptyIt' : 'team.emptyClients') | t }}
+              {{ (tab() === 'it' ? 'team.emptyIt' : tab() === 'depts' ? 'team.emptyDepts' : 'team.emptyClients') | t }}
             </td>
           </tr>
         </tbody>

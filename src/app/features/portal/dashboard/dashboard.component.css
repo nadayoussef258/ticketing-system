@@ -126,3 +126,14 @@
   transition: all 0.15s;
 }
 .btn-empty:hover { background: #eef2ff; }
+/* Receiving department of the ticket */
+.to-chip {
+  --chip-color: #4f46e5;
+  display: inline-flex; align-items: center; gap: 5px;
+  max-width: 200px; padding: 2px 10px; border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--chip-color) 35%, transparent);
+  background: color-mix(in srgb, var(--chip-color) 10%, #fff);
+  color: #374151; font-size: 0.72rem; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.to-chip i { color: var(--chip-color); font-size: 0.7rem; }

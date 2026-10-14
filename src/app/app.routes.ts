@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, itTeamGuard, adminOnlyGuard, clientGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, itTeamGuard, adminOnlyGuard, clientGuard, deptGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
@@ -26,6 +26,16 @@ export const routes: Routes = [
       {
         path: 'ticket/:id',
         loadComponent: () => import('./features/admin/ticket-detail/ticket-detail.component').then(m => m.AdminTicketDetailComponent),
+      },
+      {
+        path: 'new-ticket',
+        canActivate: [adminOnlyGuard],
+        loadComponent: () => import('./features/portal/new-ticket/new-ticket.component').then(m => m.NewTicketComponent),
+      },
+      {
+        path: 'departments',
+        canActivate: [adminOnlyGuard],
+        loadComponent: () => import('./features/admin/departments/departments.component').then(m => m.DepartmentsComponent),
       },
       {
         path: 'projects',
@@ -61,6 +71,26 @@ export const routes: Routes = [
       {
         path: 'ticket/:id',
         loadComponent: () => import('./features/portal/ticket-detail/ticket-detail.component').then(m => m.PortalTicketDetailComponent),
+      },
+    ],
+  },
+
+  // Department accounts (Finance, Marketing…)
+  {
+    path: 'dept',
+    canActivate: [authGuard, deptGuard],
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dept/dept-dashboard/dept-dashboard.component').then(m => m.DeptDashboardComponent),
+      },
+      {
+        path: 'new-ticket',
+        loadComponent: () => import('./features/portal/new-ticket/new-ticket.component').then(m => m.NewTicketComponent),
+      },
+      {
+        path: 'ticket/:id',
+        loadComponent: () => import('./features/dept/dept-ticket-detail/dept-ticket-detail.component').then(m => m.DeptTicketDetailComponent),
       },
     ],
   },

@@ -2,6 +2,12 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Ticket, TicketComment } from '../models';
 
+/** Joined data every ticket screen needs. */
+const DEPT_JOINS =
+  'department:departments(id, name_ar, name_en), ' +
+  'to_department:service_departments!to_department_id(id, code, name_ar, name_en, color, is_head), ' +
+  'from_department:service_departments!from_department_id(id, code, name_ar, name_en, color, is_head)';
+
 @Injectable({ providedIn: 'root' })
 export class TicketService {
   constructor(private supabase: SupabaseService) {}
@@ -16,7 +22,7 @@ export class TicketService {
   async getAllTickets(archived = false): Promise<Ticket[]> {
     let q = this.supabase.client
       .from('tickets')
-      .select('*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name), department:departments(id, name_ar, name_en)');
+      .select(`*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name), ${DEPT_JOINS}`);
     q = archived ? q.not('archived_at', 'is', null) : q.is('archived_at', null);
     const { data, error } = await q.order(archived ? 'archived_at' : 'created_at', { ascending: false });
     if (error) throw error;
@@ -27,11 +33,40 @@ export class TicketService {
   async getMyTickets(archived = false): Promise<Ticket[]> {
     let q = this.supabase.client
       .from('tickets')
-      .select('*, projects(name, color, code), department:departments(id, name_ar, name_en)');
+      .select(`*, projects(name, color, code), ${DEPT_JOINS}`);
     q = archived ? q.not('archived_at', 'is', null) : q.is('archived_at', null);
     const { data, error } = await q.order(archived ? 'archived_at' : 'created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as Ticket[];
+  }
+
+  /**
+   * Department account: tickets received by the department (inbox)
+   * or sent by it (sent). RLS limits a dept_user to its own department.
+   */
+  async getDepartmentTickets(departmentId: string, box: 'inbox' | 'sent', archived = false): Promise<Ticket[]> {
+    let q = this.supabase.client
+      .from('tickets')
+      .select(`*, projects(name, color, code), ${DEPT_JOINS}`)
+      .eq(box === 'inbox' ? 'to_department_id' : 'from_department_id', departmentId);
+    q = archived ? q.not('archived_at', 'is', null) : q.is('archived_at', null);
+    const { data, error } = await q.order(archived ? 'archived_at' : 'created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Ticket[];
+  }
+
+  /**
+   * Move a ticket to another department (database function transfer_ticket):
+   * status goes back to open, the assignee is cleared and a note is added
+   * to the conversation.
+   */
+  async transferTicket(ticketId: string, toDepartmentId: string, note?: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('transfer_ticket', {
+      p_ticket_id: ticketId,
+      p_to_department_id: toDepartmentId,
+      p_note: note?.trim() || null,
+    });
+    if (error) throw error;
   }
 
   /** Archive / unarchive (only resolved or closed tickets — enforced in the DB too). */
@@ -46,7 +81,7 @@ export class TicketService {
   async getTicketById(id: string): Promise<Ticket | null> {
     const { data, error } = await this.supabase.client
       .from('tickets')
-      .select('*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name, id), department:departments(id, name_ar, name_en)')
+      .select(`*, projects(name, color, code), assignee:user_profiles!assigned_to_id(full_name, id), ${DEPT_JOINS}`)
       .eq('id', id)
       .single();
     if (error) throw error;

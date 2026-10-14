@@ -1,0 +1,27 @@
+/* features/admin/departments — builds on the Projects page styles */
+
+.dept-card .project-desc.dept-alt { color: #9ca3af; font-size: 0.78rem; }
+
+/* color dots are buttons here (keyboard reachable) */
+button.color-dot { padding: 0; }
+button.color-dot:focus-visible { outline: 3px solid #c7d2fe; outline-offset: 2px; }
+
+/* Accounts under each department */
+.acct-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.acct-list li {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.78rem; color: #374151; min-width: 0;
+}
+.acct-list li i { color: #9ca3af; }
+.acct-list li.disabled { color: #9ca3af; }
+.acct-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.acct-off {
+  margin-inline-start: auto; flex-shrink: 0;
+  font-size: 0.66rem; font-weight: 600; color: #9ca3af;
+  background: #f3f4f6; border-radius: 99px; padding: 1px 8px;
+}
+.acct-hint { font-size: 0.76rem; color: #9ca3af; margin: 6px 0 0; }
+
+.action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+[dir="rtl"] .flip-rtl { transform: scaleX(-1); }

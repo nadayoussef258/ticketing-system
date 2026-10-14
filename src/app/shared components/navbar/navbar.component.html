@@ -12,6 +12,9 @@
         <i class="bi bi-grid-3x3-gap me-1"></i>{{ 'nav.tickets' | t }}
       </a>
       <ng-container *ngIf="auth.isAdmin()">
+        <a routerLink="/admin/departments" routerLinkActive="active" class="nav-link-item">
+          <i class="bi bi-diagram-3 me-1"></i>{{ 'nav.departments' | t }}
+        </a>
         <a routerLink="/admin/projects" routerLinkActive="active" class="nav-link-item">
           <i class="bi bi-folder me-1"></i>{{ 'nav.projects' | t }}
         </a>
@@ -23,6 +26,13 @@
         </a>
       </ng-container>
     </div>
+
+    <!-- Department account nav -->
+    <div class="nav-links" *ngIf="isDeptRole">
+      <a routerLink="/dept/dashboard" routerLinkActive="active" class="nav-link-item">
+        <i class="bi bi-grid-3x3-gap me-1"></i>{{ 'nav.tickets' | t }}
+      </a>
+    </div>
   </div>
 
   <div class="d-flex align-items-center gap-3">
@@ -31,7 +41,7 @@
     </span>
 
     <!-- Notification bell -->
-    <div class="notif-wrap" *ngIf="isAdminRole">
+    <div class="notif-wrap" *ngIf="showBell">
       <button class="btn-bell" (click)="toggleDropdown()" [attr.aria-label]="'nav.notifications' | t">
         <i class="bi bi-bell"></i>
         <span class="notif-badge" *ngIf="notificationSvc.unreadCount() > 0">

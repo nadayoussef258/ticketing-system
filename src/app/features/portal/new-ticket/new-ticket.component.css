@@ -186,3 +186,40 @@ textarea.form-input {
   background: #f3f4f6;
   color: #111827;
 }
+/* ---- Target department picker ---- */
+.target-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.target-option {
+  --dept-color: #4f46e5;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: #f9fafb;
+  border: 1px solid #e4e6ef;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #374151;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.target-option:hover { background: #fff; border-color: #c7d2fe; }
+.target-option input { position: absolute; opacity: 0; pointer-events: none; }
+.target-option:focus-within { box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.target-option.selected {
+  background: #fff;
+  border-color: var(--dept-color);
+  box-shadow: 0 0 0 1px var(--dept-color) inset;
+  color: #111827;
+}
+.target-dot {
+  width: 10px; height: 10px; flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--dept-color);
+}
+.target-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -12,6 +12,7 @@ export interface Project {
   created_at: string;
 }
 
+/** Requester's department inside a client project (table: departments) */
 export interface Department {
   id: string;
   project_id: string;
@@ -22,13 +23,39 @@ export interface Department {
   created_at: string;
 }
 
-export type UserRole = 'admin' | 'it_staff' | 'project_admin' | 'user';
+/** Department that receives / sends tickets: IT, Finance, Marketing… (table: service_departments) */
+export interface ServiceDepartment {
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string;
+  color: string;
+  is_head: boolean;          // true only for IT
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+/** Ticket categories of one service department (table: service_department_categories) */
+export interface ServiceDepartmentCategory {
+  id: string;
+  service_department_id: string;
+  code: string;              // stored in tickets.category
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export type UserRole = 'admin' | 'it_staff' | 'project_admin' | 'user' | 'dept_user';
 
 export interface UserProfile {
   id: string;
   full_name: string;
   role: UserRole;
-  project_id?: string | null;   // set when role = 'project_admin'
+  project_id?: string | null;              // set when role = 'project_admin'
+  service_department_id?: string | null;   // set when role = 'dept_user'
   email?: string;        // joined from auth.users
   banned_until?: string | null;
   created_at: string;
@@ -37,8 +64,8 @@ export interface UserProfile {
 export interface Ticket {
   id: string;
   ticket_number: string;
-  project_id: string;
-  project_name?: string;
+  project_id: string | null;               // null when an internal department opened the ticket
+  project_name?: string | null;
   requester_name: string;
   requester_email: string;
   category: TicketCategory;
@@ -51,17 +78,23 @@ export interface Ticket {
   attachments?: string[];
   created_by?: string;
   department_id?: string | null;
+  to_department_id: string;                // receiving department (IT for all old tickets)
+  from_department_id?: string | null;      // sending department, if internal
   archived_at?: string | null;
   archived_by?: string | null;
   created_at: string;
   updated_at: string;
   // joined
-  projects?: Project;
+  projects?: Project | null;
   assignee?: UserProfile;
   department?: Pick<Department, 'id' | 'name_ar' | 'name_en'> | null;
+  to_department?: Pick<ServiceDepartment, 'id' | 'code' | 'name_ar' | 'name_en' | 'color' | 'is_head'> | null;
+  from_department?: Pick<ServiceDepartment, 'id' | 'code' | 'name_ar' | 'name_en' | 'color' | 'is_head'> | null;
 }
 
-export type TicketCategory = 'hardware' | 'software' | 'network' | 'access' | 'email' | 'printer' | 'other';
+/** IT category codes (kept for existing code); categories are now per department */
+export type ItTicketCategory = 'hardware' | 'software' | 'network' | 'access' | 'email' | 'printer' | 'other';
+export type TicketCategory = string;
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
 export type TicketStatus   = 'open' | 'in_progress' | 'resolved' | 'closed';
 
@@ -71,10 +104,12 @@ export interface TicketComment {
   author_name: string;
   author_id?: string;
   content: string;
-  is_agent_reply: boolean;
+  is_agent_reply: boolean;   // set by the server: true = reply from the receiving department
   attachments?: string[];
   created_at: string;
 }
+
+export type NotificationType = 'new_ticket' | 'new_comment' | 'assigned' | 'transferred';
 
 export interface ChatSession {
   id: string;
@@ -106,6 +141,9 @@ export interface AppUser {
   full_name: string;
   project_id?: string | null;   // for project_admin (and optionally regular users) linked to a project
   project_name?: string;
+  service_department_id?: string | null;   // for dept_user (admin / it_staff belong to IT)
+  service_department_name?: string;
+  service_department?: Pick<ServiceDepartment, 'id' | 'code' | 'name_ar' | 'name_en' | 'color'> | null;
 }
 
 // For the admin users table (joined view)
@@ -116,6 +154,8 @@ export interface ManagedUser {
   user_role: UserRole;
   project_id?: string | null;
   project_name?: string | null;
+  service_department_id?: string | null;
+  service_department_name?: string | null;
   banned_until?: string | null;
   created_at: string;
 }

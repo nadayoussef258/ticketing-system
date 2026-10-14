@@ -1,6 +1,6 @@
 // ticket-detail.component.ts
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
@@ -9,19 +9,22 @@ import { TranslationService } from '../../../core/i18n/translation.service';
 import { NavbarComponent } from '../../../shared components/navbar/navbar.component';
 import { PriorityBadgeComponent } from '../../../shared components/priority-badge/priority-badge.component';
 import { StatusBadgeComponent } from '../../../shared components/status-badge/status-badge.component';
+import { TransferDialogComponent } from '../../../shared components/transfer-dialog/transfer-dialog.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DepartmentService } from '../../../core/services/Department.service';
+import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { TeamService } from '../../../core/services/team.service';
-import { Ticket, TicketComment, UserProfile } from '../../../core/models';
+import { ServiceDepartment, Ticket, TicketComment, UserProfile } from '../../../core/models';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [RouterLink, FormsModule, NgFor, NgIf, TranslatePipe, TranslateDatePipe, NavbarComponent, PriorityBadgeComponent, StatusBadgeComponent],
+  imports: [RouterLink, FormsModule, NgFor, NgIf, TranslatePipe, TranslateDatePipe, NavbarComponent,
+            PriorityBadgeComponent, StatusBadgeComponent, TransferDialogComponent],
   templateUrl: './ticket-detail.component.html',
-  styleUrls: ['./ticket-detail.component.css']
+  styleUrls: ['./ticket-detail.component.css', './ticket-detail-departments.component.css']
 })
 export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   ticket = signal<Ticket | null>(null);
@@ -39,6 +42,7 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   replyFileError = signal('');
   archiving = signal(false);
   notFound = signal(false);
+  showTransfer = signal(false);
   private ticketChannel: any;
   private commentsChannel: any;
   private routeSub?: Subscription;
@@ -47,13 +51,17 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     private ticketSvc: TicketService,
     public deptSvc: DepartmentService,
+    public sdSvc: ServiceDepartmentService,
     private teamSvc: TeamService,
-    private supabase: SupabaseService,  
+    private supabase: SupabaseService,
     private route: ActivatedRoute,
+    private router: Router,
     private i18n: TranslationService,
   ) {}
 
   ngOnInit() {
+    this.sdSvc.load().catch(err => console.warn('Could not load departments:', err));
+
     // Re-load when the id changes while staying on this page
     // (e.g. clicking a notification for another ticket).
     this.routeSub = this.route.paramMap.subscribe(params => {
@@ -91,6 +99,11 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
 
       // Realtime payload has no joined data (project, assignee) — merge, don't replace
       this.ticketChannel = this.ticketSvc.subscribeToTicketUpdates(id, (updated) => {
+        const before = this.ticket();
+        if (before && updated.to_department_id !== before.to_department_id) {
+          this.load(id);   // transferred: reload to get the new department (or lose access)
+          return;
+        }
         this.ticket.update(t => t ? { ...t, ...updated } : updated);
         this.syncEditFields();
       });
@@ -129,6 +142,43 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
     return t?.assignee?.full_name ?? t?.assigned_to ?? this.i18n.t('common.unassigned');
   }
 
+  // ===== Departments =====
+
+  /** Client project or sending department. */
+  sourceLabel(t: Ticket): string {
+    return t.from_department ? this.sdSvc.label(t.from_department) : (t.projects?.name ?? t.project_name ?? '');
+  }
+
+  /** Assignment to the IT team only applies while the ticket is in IT. */
+  get inIt(): boolean {
+    const t = this.ticket();
+    return !t?.to_department || t.to_department.is_head;
+  }
+
+  /** IT sent this ticket to another department: IT is the requester here. */
+  get itIsRequester(): boolean {
+    return !!this.ticket()?.from_department?.is_head;
+  }
+
+  /** Admin: any open ticket. IT staff: tickets assigned to them (DB enforces the same). */
+  get canTransfer(): boolean {
+    const t = this.ticket();
+    if (!t || t.status === 'resolved' || t.status === 'closed') return false;
+    return this.auth.isAdmin() || t.assigned_to_id === this.auth.getCurrentUserId();
+  }
+
+  onTransferred(target: ServiceDepartment) {
+    this.showTransfer.set(false);
+    if (!this.auth.isAdmin()) {
+      // IT staff lose access once the ticket leaves IT
+      this.router.navigate(['/admin/dashboard']);
+      return;
+    }
+    this.showSaveMsg(this.i18n.t('detail.transferred', { name: this.sdSvc.label(target) }), false);
+    const id = this.ticket()?.id;
+    if (id) this.load(id);
+  }
+
   get canArchive(): boolean {
     const t = this.ticket();
     return !!t && !t.archived_at && (t.status === 'resolved' || t.status === 'closed');
@@ -151,20 +201,20 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   }
 
   onReplyFileSelect(event: Event) {
-  this.replyFileError.set('');
-  const input = event.target as HTMLInputElement;
-  const files = Array.from(input.files ?? []);
-  for (const file of files) {
-    const isAccepted =
-      file.type.startsWith('image/') ||
-      file.type.startsWith('video/') ||
-      file.type === 'application/pdf';
-    if (!isAccepted) { this.replyFileError.set(this.i18n.t('file.badType', { name: file.name })); continue; }
-    if (file.size > 15 * 1024 * 1024) { this.replyFileError.set(this.i18n.t('file.tooBig', { name: file.name })); continue; }
-    this.replyFiles.push(file);
+    this.replyFileError.set('');
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    for (const file of files) {
+      const isAccepted =
+        file.type.startsWith('image/') ||
+        file.type.startsWith('video/') ||
+        file.type === 'application/pdf';
+      if (!isAccepted) { this.replyFileError.set(this.i18n.t('file.badType', { name: file.name })); continue; }
+      if (file.size > 15 * 1024 * 1024) { this.replyFileError.set(this.i18n.t('file.tooBig', { name: file.name })); continue; }
+      this.replyFiles.push(file);
+    }
+    input.value = '';
   }
-  input.value = '';
-}
 
   removeReplyFile(i: number) {
     this.replyFiles.splice(i, 1);
@@ -190,8 +240,9 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
     this.sending.set(true);
     try {
       const attachments = this.replyFiles.length ? await this.uploadReplyAttachments(ticket.id) : [];
+      // is_agent_reply is decided by the database (false when IT is the requester)
       const comment = await this.ticketSvc.addComment(
-        ticket.id, this.replyText.trim(), true, user.full_name, user.id, attachments
+        ticket.id, this.replyText.trim(), !this.itIsRequester, user.full_name, user.id, attachments
       );
       this.comments.update(c => [...c, comment]);
       this.replyText = '';
@@ -202,6 +253,7 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
       this.sending.set(false);
     }
   }
+
   async updateField(field: 'status' | 'priority' | 'assigned_to_id', value: any) {
     const ticket = this.ticket();
     if (!ticket) return;
@@ -220,7 +272,10 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
       this.showSaveMsg(this.i18n.t('common.saved'), false);
     } catch (err: any) {
       this.syncEditFields();        // put the dropdown back to the real value
-      this.showSaveMsg(err?.message ?? this.i18n.t('common.saveFailed'), true);
+      const msg: string = err?.message ?? '';
+      this.showSaveMsg(msg.includes('without at least one comment')
+        ? this.i18n.t('detail.closeNeedsComment')
+        : (msg || this.i18n.t('common.saveFailed')), true);
     }
   }
 

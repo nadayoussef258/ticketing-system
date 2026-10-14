@@ -26,6 +26,12 @@ export const clientGuard: CanActivateFn = () => {
   return auth.isClient() || inject(Router).createUrlTree([auth.homeUrl()]);
 };
 
+/** Department accounts (Finance, Marketing…). */
+export const deptGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isDept() || inject(Router).createUrlTree([auth.homeUrl()]);
+};
+
 /** Login page: only when logged out. */
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);

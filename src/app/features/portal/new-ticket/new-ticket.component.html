@@ -1,10 +1,10 @@
-<app-navbar [orgName]="auth.user()?.project_name ?? ''" role="user" />
+<app-navbar [orgName]="orgName" />
 
 <div class="page-bg min-vh-100">
   <div class="container-fluid px-4 py-4" style="max-width: 640px; margin: 0 auto;">
 
     <div class="d-flex align-items-center gap-3 mb-4">
-      <a routerLink="/portal/dashboard" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
+      <a [routerLink]="backUrl" class="btn-back" [attr.aria-label]="'common.back' | t"><i class="bi bi-arrow-left"></i></a>
       <h1 class="page-title mb-0">{{ 'newTicket.title' | t }}</h1>
     </div>
 
@@ -14,6 +14,23 @@
       </div>
 
       <form (ngSubmit)="onSubmit()" #f="ngForm">
+        <div class="mb-4" *ngIf="showTargetPicker">
+          <label class="form-label-custom" for="toDepartment">{{ 'newTicket.sendTo' | t }} <span class="required-star">*</span></label>
+          <div class="target-grid" id="toDepartment" role="radiogroup">
+            <label class="target-option" *ngFor="let d of targets()"
+                   [class.selected]="form.to_department_id === d.id"
+                   [style.--dept-color]="d.color">
+              <input type="radio" name="to_department_id" [value]="d.id"
+                     [(ngModel)]="form.to_department_id" (ngModelChange)="onTargetChange()" />
+              <span class="target-dot"></span>
+              <span class="target-name" dir="auto">{{ sdSvc.label(d) }}</span>
+            </label>
+          </div>
+          <div class="field-error-inline" *ngIf="!targetsLoading() && targets().length === 0">
+            {{ 'newTicket.noTargets' | t }}
+          </div>
+        </div>
+
         <div class="row g-3 mb-4">
           <div class="col-12">
             <label class="form-label-custom" for="requesterName">{{ 'newTicket.yourName' | t }} <span class="required-star">*</span></label>
@@ -48,14 +65,9 @@
 
         <div class="mb-4">
           <label class="form-label-custom" for="category">{{ 'newTicket.category' | t }} <span class="required-star">*</span></label>
-          <select id="category" class="form-input" [(ngModel)]="form.category" name="category" required>
-            <option value="hardware">🖥️ {{ 'category.hardware' | t }}</option>
-            <option value="software">💾 {{ 'category.software' | t }}</option>
-            <option value="network">🌐 {{ 'category.network' | t }}</option>
-            <option value="access">🔑 {{ 'category.access' | t }}</option>
-            <option value="email">✉️ {{ 'category.email' | t }}</option>
-            <option value="printer">🖨️ {{ 'category.printer' | t }}</option>
-            <option value="other">📋 {{ 'category.other' | t }}</option>
+          <select id="category" class="form-input" [(ngModel)]="form.category" name="category" required
+                  [disabled]="!form.to_department_id">
+            <option *ngFor="let c of categories" [value]="c.code">{{ categoryIcon(c.code) }} {{ sdSvc.label(c) }}</option>
           </select>
         </div>
 
@@ -107,7 +119,7 @@
             <i class="bi bi-send" *ngIf="!loading()"></i>
             {{ (loading() ? 'newTicket.submitting' : 'newTicket.submit') | t }}
           </button>
-          <a routerLink="/portal/dashboard" class="btn-cancel">{{ 'common.cancel' | t }}</a>
+          <a [routerLink]="backUrl" class="btn-cancel">{{ 'common.cancel' | t }}</a>
         </div>
       </form>
     </div>

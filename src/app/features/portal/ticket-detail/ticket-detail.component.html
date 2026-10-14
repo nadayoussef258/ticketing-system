@@ -37,6 +37,7 @@
           <span><i class="bi bi-hash"></i><bdi>{{ ticket()!.ticket_number }}</bdi></span>
           <span><i class="bi bi-person"></i><bdi>{{ ticket()!.requester_name }}</bdi></span>
           <span *ngIf="ticket()!.department"><i class="bi bi-diagram-3"></i>{{ deptSvc.label(ticket()!.department) }}</span>
+          <span *ngIf="ticket()!.to_department"><i class="bi bi-send"></i>{{ 'detail.sentTo' | t }}: <bdi>{{ handlerLabel }}</bdi></span>
         </div>
 
         <div class="archive-row mt-3" *ngIf="ticket()!.archived_at || canArchive">
@@ -59,7 +60,9 @@
 
         <div *ngIf="comments().length === 0" class="empty-replies">
           <i class="bi bi-chat-square-dots"></i>
-          <p>{{ 'detail.noRepliesClient' | t }}</p>
+          <p>{{ ticket()!.to_department && !ticket()!.to_department!.is_head
+                ? ('detail.noRepliesFrom' | t: { name: handlerLabel })
+                : ('detail.noRepliesClient' | t) }}</p>
         </div>
 
         <div *ngFor="let comment of comments()" class="reply-item mb-3"
@@ -67,7 +70,7 @@
           [class.reply-client]="!comment.is_agent_reply">
           <div class="reply-bubble">
             <div class="reply-sender">
-              {{ comment.is_agent_reply ? '🛡️ ' + ('detail.itSupport' | t) : '👤 ' + ('detail.you' | t) }}
+              {{ comment.is_agent_reply ? '🛡️ ' + handlerLabel : '👤 ' + ('detail.you' | t) }}
               <span class="reply-time">{{ comment.created_at | tdate: 'time' }}</span>
             </div>
             <p class="reply-text" dir="auto">{{ comment.content }}</p>

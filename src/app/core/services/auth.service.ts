@@ -19,6 +19,8 @@ export class AuthService {
   readonly isItTeam = computed(() => this.isAdmin() || this.isStaff());
   /** Client accounts (a project's shared account). */
   readonly isClient = computed(() => this.role() === 'project_admin' || this.role() === 'user');
+  /** Department account (Finance, Marketing…): sees its department's tickets. */
+  readonly isDept   = computed(() => this.role() === 'dept_user');
 
   constructor(private supabase: SupabaseService, private router: Router) {
     // Keep the local state in sync if the session ends (logout in another tab,
@@ -61,7 +63,9 @@ export class AuthService {
   /** Landing page for the current role. */
   homeUrl(): string {
     if (!this._user()) return '/auth/login';
-    return this.isItTeam() ? '/admin/dashboard' : '/portal/dashboard';
+    if (this.isItTeam()) return '/admin/dashboard';
+    if (this.isDept()) return '/dept/dashboard';
+    return '/portal/dashboard';
   }
 
   getCurrentUserId(): string | null {
@@ -71,7 +75,7 @@ export class AuthService {
   private async loadUserProfile(userId: string, email: string): Promise<void> {
     const { data: profile, error } = await this.supabase.client
       .from('user_profiles')
-      .select('role, full_name, project_id, projects(name)')
+      .select('role, full_name, project_id, service_department_id, projects(name), service_department:service_departments(id, code, name_ar, name_en, color)')
       .eq('id', userId)
       .maybeSingle();
 
@@ -85,6 +89,9 @@ export class AuthService {
       full_name: profile['full_name'],
       project_id: profile['project_id'] ?? null,
       project_name: (profile['projects'] as any)?.name ?? undefined,
+      service_department_id: profile['service_department_id'] ?? null,
+      service_department_name: (profile['service_department'] as any)?.name_en ?? undefined,
+      service_department: (profile['service_department'] as any) ?? null,
     });
   }
 }

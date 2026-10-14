@@ -1,0 +1,31 @@
+/* Admin ticket page — department additions (kept apart from ticket-detail.component.css) */
+
+.route-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.route-node {
+  --node-color: #9ca3af;
+  display: inline-flex; flex-direction: column; gap: 1px;
+  min-width: 0; max-width: 260px;
+  padding: 6px 12px 6px 10px;
+  border-inline-start: 3px solid var(--node-color);
+  background: color-mix(in srgb, var(--node-color) 8%, #fff);
+  border-radius: 8px;
+}
+.route-caption { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #9ca3af; }
+.route-name { font-size: 0.86rem; font-weight: 600; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.route-arrow { color: #c4c8d4; font-size: 1rem; }
+
+.btn-transfer {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  background: #fff; color: #4f46e5;
+  border: 1px solid #c7d2fe; border-radius: 10px;
+  padding: 8px 16px; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-transfer:hover { background: #eef2ff; border-color: #a5b4fc; }
+
+.assign-note {
+  font-size: 0.78rem; color: #6b7280; line-height: 1.5;
+  background: #f9fafb; border: 1px dashed #e4e6ef; border-radius: 8px; padding: 8px 10px;
+}
+
+[dir="rtl"] .flip-rtl { transform: scaleX(-1); }
