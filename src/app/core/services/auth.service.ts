@@ -81,7 +81,11 @@ export class AuthService {
 
     if (error) { console.error('loadUserProfile error:', error); return; }
     if (!profile) { console.warn('No user_profile row for:', userId); return; }
-
+// Tasks-system accounts (task_user) can't use the ticketing system
+if (profile['role'] === 'task_user') {
+  await this.supabase.auth.signOut();
+  throw new Error('هذا الحساب خاص بنظام متابعة المهام فقط — This account is for the Tasks system only.');
+}
     this._user.set({
       id: userId,
       email,
