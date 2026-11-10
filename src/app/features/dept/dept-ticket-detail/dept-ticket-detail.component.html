@@ -9,7 +9,7 @@
     </div>
 
     <div *ngIf="loading()" class="text-center py-5">
-      <div class="spinner-border" style="color:#4f46e5;"></div>
+      <div class="spinner-border" style="color:#19587b;"></div>
     </div>
 
     <div *ngIf="!loading() && notFound()" class="info-card p-5 text-center">
@@ -28,7 +28,7 @@
             <bdi class="route-name">{{ sourceLabel(t) }}</bdi>
           </span>
           <i class="bi bi-arrow-right route-arrow flip-rtl"></i>
-          <span class="route-node" [style.--node-color]="t.to_department?.color ?? '#4f46e5'">
+          <span class="route-node" [style.--node-color]="t.to_department?.color ?? '#19587b'">
             <span class="route-caption">{{ 'detail.sentTo' | t }}</span>
             <bdi class="route-name">{{ sdSvc.label(t.to_department) }}</bdi>
           </span>
@@ -51,6 +51,11 @@
           <span><i class="bi bi-hash"></i><bdi>{{ t.ticket_number }}</bdi></span>
           <span><i class="bi bi-person"></i><bdi>{{ t.requester_name }}</bdi></span>
           <span *ngIf="t.department"><i class="bi bi-diagram-3"></i>{{ deptSvc.label(t.department) }}</span>
+        </div>
+
+        <div class="stop-banner mt-3" *ngIf="t.status === 'closed' && t.status_reason">
+          <i class="bi bi-pause-circle"></i>
+          <div><strong>{{ 'detail.stoppedBecause' | t }}</strong> <span dir="auto">{{ t.status_reason }}</span></div>
         </div>
 
         <div class="archive-row mt-3" *ngIf="t.archived_at || canArchive">
@@ -77,11 +82,16 @@
                 <option *ngFor="let s of STATUSES" [value]="s">{{ ('status.' + s) | t }}</option>
               </select>
               <button type="button" class="btn-send" (click)="saveStatus()"
-                      [disabled]="savingStatus() || statusDraft === t.status">
+                      [disabled]="savingStatus() || !canSaveStatus">
                 <span *ngIf="savingStatus()" class="spinner-border spinner-border-sm"></span>
                 {{ 'common.save' | t }}
               </button>
             </div>
+          </div>
+          <div class="manage-field manage-reason" *ngIf="statusDraft === 'closed'">
+            <label class="manage-label" for="reasonInput">{{ 'detail.stopReason' | t }} <span class="text-danger">*</span></label>
+            <textarea id="reasonInput" class="reply-input" rows="2" dir="auto" maxlength="1000"
+                      [placeholder]="'detail.stopReasonPh' | t" [(ngModel)]="reasonDraft" [disabled]="savingStatus()"></textarea>
           </div>
           <div class="manage-field manage-transfer" *ngIf="canTransfer">
             <span class="manage-label">&nbsp;</span>

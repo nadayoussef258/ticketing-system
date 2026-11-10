@@ -33,10 +33,11 @@ export class PortalDashboardComponent implements OnInit {
   get stats() {
     const t = this.tickets();
     return [
-      { label: 'stat.total',       count: t.length,                                         color: '#4f46e5' },
-      { label: 'status.open',        count: t.filter(x => x.status === 'open').length,        color: '#4f46e5' },
-      { label: 'status.in_progress', count: t.filter(x => x.status === 'in_progress').length, color: '#d97706' },
-      { label: 'status.resolved',    count: t.filter(x => x.status === 'resolved').length,    color: '#059669' },
+      { label: 'status.open',        count: t.filter(x => x.status === 'open').length,        color: '#475569' },
+      { label: 'status.in_progress', count: t.filter(x => x.status === 'in_progress').length, color: '#1d4ed8' },
+      { label: 'status.in_review',   count: t.filter(x => x.status === 'in_review').length,   color: '#b45309' },
+      { label: 'status.closed',      count: t.filter(x => x.status === 'closed').length,      color: '#b91c1c' },
+      { label: 'status.resolved',    count: t.filter(x => x.status === 'resolved').length,    color: '#15803d' },
     ];
   }
 

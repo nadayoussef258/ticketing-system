@@ -43,6 +43,9 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   archiving = signal(false);
   notFound = signal(false);
   showTransfer = signal(false);
+  /** Stopping a ticket asks for the reason first */
+  stopOpen = signal(false);
+  stopReason = '';
   private ticketChannel: any;
   private commentsChannel: any;
   private routeSub?: Subscription;
@@ -254,6 +257,41 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Status dropdown: "Stopped" needs a reason, the others are saved right away. */
+  onStatusChange(value: string) {
+    if (value === 'closed') {
+      this.stopReason = '';
+      this.stopOpen.set(true);
+      return;
+    }
+    this.updateField('status', value);
+  }
+
+  cancelStop() {
+    this.stopOpen.set(false);
+    this.syncEditFields();
+  }
+
+  async confirmStop() {
+    const ticket = this.ticket();
+    const reason = this.stopReason.trim();
+    if (!ticket || !reason) return;
+    try {
+      await this.ticketSvc.updateTicket(ticket.id, { status: 'closed', status_reason: reason });
+      this.ticket.update(t => t ? { ...t, status: 'closed', status_reason: reason } : t);
+      this.stopOpen.set(false);
+      this.showSaveMsg(this.i18n.t('common.saved'), false);
+    } catch (err: any) {
+      this.showSaveMsg(this.errorText(err), true);
+    }
+  }
+
+  private errorText(err: any): string {
+    const msg: string = err?.message ?? '';
+    if (msg.includes('reason is required')) return this.i18n.t('detail.reasonRequired');
+    return msg || this.i18n.t('common.saveFailed');
+  }
+
   async updateField(field: 'status' | 'priority' | 'assigned_to_id', value: any) {
     const ticket = this.ticket();
     if (!ticket) return;
@@ -265,17 +303,15 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
         patch.assignee = m ? ({ full_name: m.full_name } as any) : undefined;
         patch.assigned_to = m?.full_name;
       }
-      if (field === 'status' && value !== 'resolved' && value !== 'closed') {
-        patch.archived_at = null;   // re-opening takes it out of the archive (DB does the same)
+      if (field === 'status') {
+        patch.status_reason = null;   // the reason only applies while stopped (DB does the same)
+        if (value !== 'resolved' && value !== 'closed') patch.archived_at = null;   // re-opening un-archives
       }
       this.ticket.update(t => t ? { ...t, ...patch } : t);
       this.showSaveMsg(this.i18n.t('common.saved'), false);
     } catch (err: any) {
       this.syncEditFields();        // put the dropdown back to the real value
-      const msg: string = err?.message ?? '';
-      this.showSaveMsg(msg.includes('without at least one comment')
-        ? this.i18n.t('detail.closeNeedsComment')
-        : (msg || this.i18n.t('common.saveFailed')), true);
+      this.showSaveMsg(this.errorText(err), true);
     }
   }
 

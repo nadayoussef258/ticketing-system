@@ -22,7 +22,7 @@ import { NavbarComponent } from '../../../shared components/navbar/navbar.compon
   styleUrls: ['../projects/projects.component.css', './departments.component.css'],
 })
 export class DepartmentsComponent implements OnInit {
-  readonly PRESET_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+  readonly PRESET_COLORS = ['#19587b', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
   loading = signal(true);
   saving = signal(false);
@@ -34,11 +34,17 @@ export class DepartmentsComponent implements OnInit {
   /** IT first, then the others. */
   readonly departments = computed(() => this.sdSvc.departments());
 
+  /** Active departments or the archive (archived = is_active false) */
+  tab = signal<'active' | 'archived'>('active');
+  readonly shown = computed(() =>
+    this.departments().filter(d => this.tab() === 'active' ? d.is_active : !d.is_active));
+  readonly archivedCount = computed(() => this.departments().filter(d => !d.is_active).length);
+
   newDept = { name_ar: '', name_en: '', code: '', color: '#ec4899' };
 
   // Edit
   editTarget = signal<ServiceDepartment | null>(null);
-  editForm = { name_ar: '', name_en: '', code: '', color: '#4f46e5' };
+  editForm = { name_ar: '', name_en: '', code: '', color: '#19587b' };
 
   // Categories
   catTarget = signal<ServiceDepartment | null>(null);
@@ -159,11 +165,13 @@ export class DepartmentsComponent implements OnInit {
     }
   }
 
+  /** Archive = the department stops receiving tickets and leaves the lists; restore brings it back. */
   async toggleActive(d: ServiceDepartment) {
     if (d.is_head) return;
+    if (d.is_active && !confirm(this.i18n.t('sdept.confirmArchive', { name: this.sdSvc.label(d) }))) return;
     try {
       await this.sdSvc.update(d.id, { is_active: !d.is_active });
-      this.showToast(this.i18n.t(d.is_active ? 'sdept.deactivated' : 'sdept.activated'));
+      this.showToast(this.i18n.t(d.is_active ? 'sdept.archivedToast' : 'sdept.restoredToast', { name: this.sdSvc.label(d) }));
     } catch (err: any) {
       this.showToast(err?.message ?? this.i18n.t('common.saveFailed'), true);
     }

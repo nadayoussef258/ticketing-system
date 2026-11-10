@@ -58,18 +58,34 @@
 
     <!-- Loading -->
     <div *ngIf="loading()" class="text-center py-5">
-      <div class="spinner-border" style="color:#4f46e5;"></div>
+      <div class="spinner-border" style="color:#19587b;"></div>
+    </div>
+
+    <!-- Active / Archive -->
+    <div class="seg-tabs mb-3" *ngIf="!loading()">
+      <button type="button" class="seg-tab" [class.active]="tab() === 'active'" (click)="tab.set('active')">
+        <i class="bi bi-diagram-3"></i>{{ 'common.active' | t }}
+      </button>
+      <button type="button" class="seg-tab" [class.active]="tab() === 'archived'" (click)="tab.set('archived')">
+        <i class="bi bi-archive"></i>{{ 'common.archive' | t }}
+        <span class="seg-count" *ngIf="archivedCount()">{{ archivedCount() }}</span>
+      </button>
+    </div>
+
+    <div class="dept-empty" *ngIf="!loading() && tab() === 'archived' && shown().length === 0">
+      <i class="bi bi-archive"></i>
+      <p>{{ 'sdept.archiveEmpty' | t }}</p>
     </div>
 
     <!-- Departments -->
     <div class="row g-3" *ngIf="!loading()">
-      <div class="col-12 col-md-6 col-lg-4" *ngFor="let d of departments()">
+      <div class="col-12 col-md-6 col-lg-4" *ngFor="let d of shown()">
         <div class="project-card dept-card" [class.archived]="!d.is_active">
           <div class="project-header" [style.background]="d.color">
             <div class="project-code" dir="ltr">{{ d.code }}</div>
             <span class="project-status-pill" [class.archived]="!d.is_active">
               <ng-container *ngIf="d.is_head"><i class="bi bi-star-fill me-1"></i>{{ 'sdept.head' | t }}</ng-container>
-              <ng-container *ngIf="!d.is_head">{{ (d.is_active ? 'projects.status.active' : 'common.inactive') | t }}</ng-container>
+              <ng-container *ngIf="!d.is_head">{{ (d.is_active ? 'projects.status.active' : 'sdept.archivedLabel') | t }}</ng-container>
             </span>
           </div>
 
@@ -104,11 +120,10 @@
               <i class="bi bi-pencil"></i>
             </button>
             <button class="action-btn" *ngIf="!d.is_head"
-                    [title]="(d.is_active ? 'common.deactivate' : 'common.activate') | t"
-                    [attr.aria-label]="(d.is_active ? 'common.deactivate' : 'common.activate') | t"
+                    [title]="(d.is_active ? 'sdept.archive' : 'sdept.restore') | t"
+                    [attr.aria-label]="(d.is_active ? 'sdept.archive' : 'sdept.restore') | t"
                     (click)="toggleActive(d)">
-              <i class="bi" [class.bi-toggle-on]="d.is_active" [class.bi-toggle-off]="!d.is_active"
-                 [style.color]="d.is_active ? '#059669' : '#9ca3af'"></i>
+              <i class="bi" [class.bi-archive]="d.is_active" [class.bi-box-arrow-up]="!d.is_active"></i>
             </button>
           </div>
         </div>

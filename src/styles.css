@@ -8,20 +8,25 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg:          #f5f6fa;
+  --bg:          #f4f7f9;
   --surface:     #ffffff;
-  --surface-2:   #f0f1f7;
-  --border:      #e4e6ef;
-  --border-2:    #d0d3e8;
+  --surface-2:   #f0f4f7;
+  --border:      #e1e7ec;
+  --border-2:    #cbd7e0;
 
   --text-primary:   #111827;
   --text-secondary: #6b7280;
   --text-muted:     #9ca3af;
 
-  --accent:        #4f46e5;
-  --accent-hover:  #4338ca;
-  --accent-light:  #eef2ff;
-  --accent-mid:    #c7d2fe;
+  --accent:        #19587b;
+  --accent-hover:  #11425e;
+  --accent-light:  #e9f2f7;
+  --accent-mid:    #b6d1e0;
+
+  /* B14 brand (from the logo): navy #19587B + green #9CCE5F */
+  --brand:          #19587b;
+  --brand-green:    #9cce5f;
+  --brand-gradient: linear-gradient(135deg, #9cce5f 0%, #3f8a7a 45%, #19587b 100%);
 
   --success:       #059669;
   --success-light: #ecfdf5;

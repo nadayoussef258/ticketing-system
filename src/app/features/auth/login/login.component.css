@@ -1,29 +1,33 @@
 .login-page {
-  background: linear-gradient(135deg, #f0f1ff 0%, #f5f6fa 50%, #eef2ff 100%);
+  background: radial-gradient(circle at 15% 15%, rgba(156,206,95,0.18), transparent 45%),
+              radial-gradient(circle at 85% 85%, rgba(25,88,123,0.16), transparent 50%),
+              #f4f7f9;
   min-height: 100vh;
 }
 
 .login-card {
   background: #fff;
-  border: 1px solid #e4e6ef;
+  border: 1px solid #e1e7ec;
   border-radius: 20px;
   padding: 44px 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 32px rgba(79,70,229,0.1), 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 32px rgba(25,88,123,0.1), 0 2px 8px rgba(0,0,0,0.06);
+  position: relative;
+  overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(135deg, #9cce5f 0%, #3f8a7a 45%, #19587b 100%);
 }
 
-.brand-icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(79,70,229,0.35);
+.login-logo {
+  display: block;
+  height: 82px;
+  width: auto;
 }
 
 .login-title {
@@ -64,7 +68,7 @@
 .field-input {
   width: 100%;
   background: #f9fafb;
-  border: 1.5px solid #e4e6ef;
+  border: 1.5px solid #e1e7ec;
   color: #111827;
   border-radius: 11px;
   padding: 11px 14px;
@@ -79,8 +83,8 @@
 
 .field-input:focus {
   background: #fff;
-  border-color: #a5b4fc;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  border-color: #8fb8cf;
+  box-shadow: 0 0 0 3px rgba(25,88,123,0.12);
 }
 
 .field-input::placeholder { color: #9ca3af; }
@@ -97,11 +101,11 @@
   font-size: 0.9rem;
   transition: color 0.15s;
 }
-.eye-btn:hover { color: #4f46e5; }
+.eye-btn:hover { color: #19587b; }
 
 .btn-signin {
   width: 100%;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, #19587b, #1f6d96);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -109,7 +113,7 @@
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+  box-shadow: 0 4px 14px rgba(25,88,123,0.35);
   transition: all 0.15s;
   display: flex;
   align-items: center;
@@ -118,7 +122,7 @@
 }
 .btn-signin:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(79,70,229,0.4);
+  box-shadow: 0 6px 20px rgba(25,88,123,0.4);
 }
 .btn-signin:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 

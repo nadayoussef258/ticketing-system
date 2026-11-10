@@ -9,7 +9,7 @@
     </div>
 
     <div *ngIf="loading()" class="text-center py-5">
-      <div class="spinner-border" style="color:#4f46e5;"></div>
+      <div class="spinner-border" style="color:#19587b;"></div>
     </div>
 
     <div *ngIf="!loading() && notFound()" class="info-card p-5 text-center">
@@ -30,7 +30,7 @@
                 <bdi class="route-name">{{ sourceLabel(ticket()!) || '—' }}</bdi>
               </span>
               <i class="bi bi-arrow-right route-arrow flip-rtl"></i>
-              <span class="route-node" [style.--node-color]="ticket()!.to_department?.color ?? '#4f46e5'">
+              <span class="route-node" [style.--node-color]="ticket()!.to_department?.color ?? '#19587b'">
                 <span class="route-caption">{{ 'detail.sentTo' | t }}</span>
                 <bdi class="route-name">{{ sdSvc.label(ticket()!.to_department) }}</bdi>
               </span>
@@ -50,6 +50,10 @@
               <span><i class="bi bi-hash"></i><bdi>{{ ticket()!.ticket_number }}</bdi></span>
               <span><i class="bi bi-person"></i><bdi>{{ ticket()!.requester_name }}</bdi></span>
               <span *ngIf="ticket()!.department"><i class="bi bi-diagram-3"></i>{{ deptSvc.label(ticket()!.department) }}</span>
+            </div>
+            <div class="stop-banner mb-3" *ngIf="ticket()!.status === 'closed' && ticket()!.status_reason">
+              <i class="bi bi-pause-circle"></i>
+              <div><strong>{{ 'detail.stoppedBecause' | t }}</strong> <span dir="auto">{{ ticket()!.status_reason }}</span></div>
             </div>
             <div class="archived-banner mb-3" *ngIf="ticket()!.archived_at">
               <i class="bi bi-archive"></i>
@@ -125,11 +129,12 @@
 
             <div class="mb-3">
               <label class="form-label small fw-semibold text-muted">{{ 'common.status' | t }}</label>
-              <select class="manage-select" [(ngModel)]="editStatus" (change)="updateField('status', editStatus)">
+              <select class="manage-select" [(ngModel)]="editStatus" (change)="onStatusChange(editStatus)">
                 <option value="open">{{ 'status.open' | t }}</option>
                 <option value="in_progress">{{ 'status.in_progress' | t }}</option>
-                <option value="resolved">{{ 'status.resolved' | t }}</option>
+                <option value="in_review">{{ 'status.in_review' | t }}</option>
                 <option value="closed">{{ 'status.closed' | t }}</option>
+                <option value="resolved">{{ 'status.resolved' | t }}</option>
               </select>
             </div>
 
@@ -189,6 +194,22 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- Stop: ask for the reason -->
+      <div class="stop-overlay" *ngIf="stopOpen()" (click)="cancelStop()">
+        <div class="stop-box" role="dialog" aria-modal="true" [attr.aria-label]="'detail.stopTitle' | t" (click)="$event.stopPropagation()">
+          <p class="stop-title">{{ 'detail.stopTitle' | t }}</p>
+          <label class="form-label small fw-semibold text-muted" for="stopReason">{{ 'detail.stopReason' | t }}</label>
+          <textarea id="stopReason" class="reply-input mb-3" rows="3" dir="auto" maxlength="1000"
+                    [placeholder]="'detail.stopReasonPh' | t" [(ngModel)]="stopReason"></textarea>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn-archive" (click)="cancelStop()">{{ 'common.cancel' | t }}</button>
+            <button type="button" class="btn-stop" (click)="confirmStop()" [disabled]="!stopReason.trim()">
+              <i class="bi bi-pause-circle"></i>{{ 'detail.stopConfirm' | t }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <app-transfer-dialog *ngIf="showTransfer()" [ticket]="ticket()!" [adminView]="true"

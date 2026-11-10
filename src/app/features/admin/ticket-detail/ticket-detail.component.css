@@ -1,6 +1,6 @@
 /* shared ticket detail styles (both client + IT) */
 
-.page-bg { background: #f5f6fa; }
+.page-bg { background: #f4f7f9; }
 
 /* Back button */
 .btn-back {
@@ -10,19 +10,19 @@
   width: 34px;
   height: 34px;
   background: #fff;
-  border: 1px solid #e4e6ef;
+  border: 1px solid #e1e7ec;
   border-radius: 8px;
   color: #374151;
   text-decoration: none;
   transition: all 0.15s;
   font-size: 0.9rem;
 }
-.btn-back:hover { background: #f5f6fa; border-color: #c7d2fe; color: #4f46e5; }
+.btn-back:hover { background: #f4f7f9; border-color: #b6d1e0; color: #19587b; }
 
 /* Cards */
 .info-card {
   background: #fff;
-  border: 1px solid #e4e6ef;
+  border: 1px solid #e1e7ec;
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
@@ -33,8 +33,8 @@
   padding: 12px 16px;
 }
 .reply-it .reply-bubble {
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
+  background: #e9f2f7;
+  border: 1px solid #b6d1e0;
 }
 .reply-client .reply-bubble {
   background: #f9fafb;
@@ -46,7 +46,7 @@
   font-weight: 600;
   margin-bottom: 4px;
 }
-.reply-it .reply-sender { color: #4f46e5; }
+.reply-it .reply-sender { color: #19587b; }
 .reply-client .reply-sender { color: #374151; }
 
 .reply-time {
@@ -67,7 +67,7 @@
 /* Reply input */
 .reply-input {
   background: #f9fafb;
-  border: 1px solid #e4e6ef;
+  border: 1px solid #e1e7ec;
   color: #111827;
   border-radius: 10px;
   padding: 10px 14px;
@@ -79,8 +79,8 @@
 }
 .reply-input:focus {
   outline: none;
-  border-color: #a5b4fc;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  border-color: #8fb8cf;
+  box-shadow: 0 0 0 3px rgba(25,88,123,0.1);
   background: #fff;
 }
 .reply-input::placeholder { color: #9ca3af; }
@@ -90,7 +90,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #4f46e5;
+  background: #19587b;
   color: #fff;
   border: none;
   font-size: 0.83rem;
@@ -99,15 +99,15 @@
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 2px 6px rgba(79,70,229,0.25);
+  box-shadow: 0 2px 6px rgba(25,88,123,0.25);
 }
-.btn-send:hover:not(:disabled) { background: #4338ca; transform: translateY(-1px); }
+.btn-send:hover:not(:disabled) { background: #11425e; transform: translateY(-1px); }
 .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Manage panel selects */
 .manage-select {
   background: #f9fafb;
-  border: 1px solid #e4e6ef;
+  border: 1px solid #e1e7ec;
   color: #374151;
   border-radius: 8px;
   padding: 8px 12px;
@@ -117,8 +117,8 @@
   transition: border-color 0.15s;
 }
 .manage-select:focus {
-  border-color: #a5b4fc;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  border-color: #8fb8cf;
+  box-shadow: 0 0 0 3px rgba(25,88,123,0.1);
   background: #fff;
 }
 
@@ -146,9 +146,9 @@
   transition: all .15s;
 }
 .file-drop:hover {
-  border-color: #4f46e5;
-  color: #4f46e5;
-  background: #f5f5ff;
+  border-color: #19587b;
+  color: #19587b;
+  background: #eef5f9;
 }
 
 .file-error {
@@ -194,6 +194,16 @@
 .file-remove:hover { color: #dc2626; }
 .requester-line { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.8rem; color: #6b7280; }
 .requester-line i { margin-inline-end: 4px; color: #9ca3af; }
-.assignee-text { background: #f9fafb; border: 1px solid #e4e6ef; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; color: #374151; }
+.assignee-text { background: #f9fafb; border: 1px solid #e1e7ec; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; color: #374151; }
 .archive-hint { font-size: 0.75rem; color: #9ca3af; }
 .manage-select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Stopped (متوقفة): the reason */
+.stop-banner { display: flex; gap: 10px; align-items: flex-start; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; }
+.stop-banner > i { font-size: 1.05rem; margin-top: 1px; }
+.stop-overlay { position: fixed; inset: 0; z-index: 1060; background: rgba(17,24,39,.45); display: flex; align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; }
+.stop-box { width: 100%; max-width: 440px; background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 12px 40px rgba(17,24,39,.18); }
+.stop-title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 14px; }
+.btn-stop { display: inline-flex; align-items: center; gap: 6px; background: #b91c1c; color: #fff; border: none; font-size: 0.83rem; font-weight: 600; padding: 8px 18px; border-radius: 10px; cursor: pointer; }
+.btn-stop:hover:not(:disabled) { background: #991b1b; }
+.btn-stop:disabled { opacity: .5; cursor: not-allowed; }

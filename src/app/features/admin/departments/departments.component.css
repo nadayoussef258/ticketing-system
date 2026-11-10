@@ -4,7 +4,7 @@
 
 /* color dots are buttons here (keyboard reachable) */
 button.color-dot { padding: 0; }
-button.color-dot:focus-visible { outline: 3px solid #c7d2fe; outline-offset: 2px; }
+button.color-dot:focus-visible { outline: 3px solid #b6d1e0; outline-offset: 2px; }
 
 /* Accounts under each department */
 .acct-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -25,3 +25,5 @@ button.color-dot:focus-visible { outline: 3px solid #c7d2fe; outline-offset: 2px
 .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 [dir="rtl"] .flip-rtl { transform: scaleX(-1); }
+.dept-empty { text-align: center; padding: 48px 16px; color: #9ca3af; }
+.dept-empty i { font-size: 2rem; display: block; margin-bottom: 8px; }

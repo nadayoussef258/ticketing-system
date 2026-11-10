@@ -73,6 +73,8 @@ export interface Ticket {
   subject: string;
   description: string;
   status: TicketStatus;
+  /** why the ticket is stopped (status 'closed'); null otherwise */
+  status_reason?: string | null;
   assigned_to?: string;
   assigned_to_id?: string | null;
   attachments?: string[];
@@ -96,7 +98,9 @@ export interface Ticket {
 export type ItTicketCategory = 'hardware' | 'software' | 'network' | 'access' | 'email' | 'printer' | 'other';
 export type TicketCategory = string;
 export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
-export type TicketStatus   = 'open' | 'in_progress' | 'resolved' | 'closed';
+/** Same five statuses as the tasks system:
+ *  open = جديدة · in_progress = قيد التنفيذ · in_review = في المراجعة · closed = متوقفة (needs a reason) · resolved = مكتملة */
+export type TicketStatus   = 'open' | 'in_progress' | 'in_review' | 'resolved' | 'closed';
 
 export interface TicketComment {
   id: string;

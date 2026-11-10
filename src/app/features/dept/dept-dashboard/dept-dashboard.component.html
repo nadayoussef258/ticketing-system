@@ -6,7 +6,7 @@
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 gap-3 flex-wrap">
       <div class="d-flex align-items-center gap-3">
-        <span class="dept-mark" [style.background]="auth.user()?.service_department?.color ?? '#4f46e5'">
+        <span class="dept-mark" [style.background]="auth.user()?.service_department?.color ?? '#19587b'">
           <i class="bi bi-diagram-3"></i>
         </span>
         <div>
@@ -41,7 +41,7 @@
 
     <!-- Stats -->
     <div class="row g-3 mb-4" *ngIf="view() === 'active' && !loading()">
-      <div class="col-6 col-md-3" *ngFor="let stat of stats">
+      <div class="col-6 col-md" *ngFor="let stat of stats">
         <div class="stat-card">
           <div class="stat-label">{{ stat.label | t }}</div>
           <div class="stat-value" [style.color]="stat.color">{{ stat.count }}</div>
@@ -51,7 +51,7 @@
 
     <!-- Loading -->
     <div class="text-center py-5" *ngIf="loading()">
-      <div class="spinner-border" style="color: #4f46e5;"></div>
+      <div class="spinner-border" style="color: #19587b;"></div>
       <p class="text-muted mt-2 small">{{ 'common.loadingTickets' | t }}</p>
     </div>
 

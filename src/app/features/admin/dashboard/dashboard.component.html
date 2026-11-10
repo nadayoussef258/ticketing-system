@@ -33,7 +33,7 @@
     </div>
 
     <div class="row g-3 mb-4" *ngIf="view() === 'active'">
-      <div class="col-6 col-md-3" *ngFor="let stat of stats()">
+      <div class="col-6 col-md" *ngFor="let stat of stats()">
         <div class="stat-card">
           <div class="stat-label">{{ stat.label | t }}</div>
           <div class="stat-value" [style.color]="stat.color">{{ stat.count }}</div>
@@ -49,8 +49,9 @@
           <option value="all">{{ 'filter.allStatus' | t }}</option>
           <option value="open">{{ 'status.open' | t }}</option>
           <option value="in_progress">{{ 'status.in_progress' | t }}</option>
-          <option value="resolved">{{ 'status.resolved' | t }}</option>
+          <option value="in_review">{{ 'status.in_review' | t }}</option>
           <option value="closed">{{ 'status.closed' | t }}</option>
+          <option value="resolved">{{ 'status.resolved' | t }}</option>
         </select>
       </div>
       <select class="filter-select" [ngModel]="filterPriority()" (ngModelChange)="filterPriority.set($event)"
@@ -130,7 +131,7 @@
                     <bdi>{{ sdSvc.label(ticket.from_department) }}</bdi>
                   </span>
                   <i class="bi bi-arrow-right route-arrow flip-rtl"></i>
-                  <span class="dept-pill" [style.--pill-color]="ticket.to_department?.color ?? '#4f46e5'">
+                  <span class="dept-pill" [style.--pill-color]="ticket.to_department?.color ?? '#19587b'">
                     <bdi>{{ sdSvc.label(ticket.to_department) }}</bdi>
                   </span>
                 </div>

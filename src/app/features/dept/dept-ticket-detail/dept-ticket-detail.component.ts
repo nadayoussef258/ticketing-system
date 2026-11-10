@@ -30,7 +30,8 @@ import { TransferDialogComponent } from '../../../shared components/transfer-dia
   styleUrls: ['../../portal/ticket-detail/ticket-detail.component.css', './dept-ticket-detail.component.css'],
 })
 export class DeptTicketDetailComponent implements OnInit, OnDestroy {
-  readonly STATUSES: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed'];
+  /** Same five statuses as the tasks system; 'closed' = Stopped (needs a reason) */
+  readonly STATUSES: TicketStatus[] = ['open', 'in_progress', 'in_review', 'closed', 'resolved'];
 
   ticket = signal<Ticket | null>(null);
   comments = signal<TicketComment[]>([]);
@@ -43,6 +44,8 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
   replyFileError = signal('');
 
   statusDraft: TicketStatus = 'open';
+  /** reason typed when the draft status is 'closed' (Stopped) */
+  reasonDraft = '';
   savingStatus = signal(false);
   statusMsg = signal('');
   statusError = signal('');
@@ -104,6 +107,7 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
       ]);
       this.ticket.set(ticket);
       this.statusDraft = ticket?.status ?? 'open';
+      this.reasonDraft = ticket?.status_reason ?? '';
       this.comments.set(comments);
       await this.notificationSvc.markTicketNotificationsRead(id);
       const me = this.auth.getCurrentUserId();
@@ -120,7 +124,10 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
           return;
         }
         this.ticket.update(t => t ? { ...t, ...updated } : t);
-        if (!this.savingStatus()) this.statusDraft = updated.status;
+        if (!this.savingStatus()) {
+          this.statusDraft = updated.status;
+          this.reasonDraft = updated.status_reason ?? '';
+        }
       });
     } catch (err) {
       console.warn('Ticket not available:', err);
@@ -166,23 +173,39 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
 
   // ===== Status (receiving department only) =====
 
+  /** Something to save: a new status, or a new reason for a stopped ticket. */
+  get statusChanged(): boolean {
+    const t = this.ticket();
+    if (!t) return false;
+    if (this.statusDraft !== t.status) return true;
+    return t.status === 'closed' && this.reasonDraft.trim() !== (t.status_reason ?? '');
+  }
+
+  /** Stopping needs a reason. */
+  get canSaveStatus(): boolean {
+    return this.statusChanged && (this.statusDraft !== 'closed' || !!this.reasonDraft.trim());
+  }
+
   async saveStatus() {
     const t = this.ticket();
-    if (!t || this.statusDraft === t.status) return;
+    if (!t || !this.canSaveStatus) return;
+    const reason = this.statusDraft === 'closed' ? this.reasonDraft.trim() : null;
     this.savingStatus.set(true);
     this.statusMsg.set('');
     this.statusError.set('');
     try {
-      await this.ticketSvc.updateTicket(t.id, { status: this.statusDraft });
-      this.ticket.update(x => x ? { ...x, status: this.statusDraft } : x);
+      await this.ticketSvc.updateTicket(t.id, { status: this.statusDraft, status_reason: reason });
+      this.ticket.update(x => x ? { ...x, status: this.statusDraft, status_reason: reason } : x);
+      if (!reason) this.reasonDraft = '';
       this.statusMsg.set(this.i18n.t('detail.statusSaved'));
       setTimeout(() => this.statusMsg.set(''), 3000);
     } catch (err: any) {
       const msg: string = err?.message ?? '';
-      this.statusError.set(msg.includes('without at least one comment')
-        ? this.i18n.t('detail.closeNeedsComment')
+      this.statusError.set(msg.includes('reason is required')
+        ? this.i18n.t('detail.reasonRequired')
         : (msg || this.i18n.t('common.saveFailed')));
       this.statusDraft = t.status;
+      this.reasonDraft = t.status_reason ?? '';
     } finally {
       this.savingStatus.set(false);
     }
