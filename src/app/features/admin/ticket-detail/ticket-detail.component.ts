@@ -10,25 +10,28 @@ import { NavbarComponent } from '../../../shared components/navbar/navbar.compon
 import { PriorityBadgeComponent } from '../../../shared components/priority-badge/priority-badge.component';
 import { StatusBadgeComponent } from '../../../shared components/status-badge/status-badge.component';
 import { TransferDialogComponent } from '../../../shared components/transfer-dialog/transfer-dialog.component';
+import { TicketPartsComponent } from '../../../shared components/ticket-parts/ticket-parts.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DepartmentService } from '../../../core/services/Department.service';
 import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { TeamService } from '../../../core/services/team.service';
-import { ServiceDepartment, Ticket, TicketComment, UserProfile } from '../../../core/models';
+import { ServiceDepartment, Ticket, TicketComment, TicketPart, UserProfile } from '../../../core/models';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
   imports: [RouterLink, FormsModule, NgFor, NgIf, TranslatePipe, TranslateDatePipe, NavbarComponent,
-            PriorityBadgeComponent, StatusBadgeComponent, TransferDialogComponent],
+            PriorityBadgeComponent, StatusBadgeComponent, TransferDialogComponent, TicketPartsComponent],
   templateUrl: './ticket-detail.component.html',
   styleUrls: ['./ticket-detail.component.css', './ticket-detail-departments.component.css']
 })
 export class AdminTicketDetailComponent implements OnInit, OnDestroy {
   ticket = signal<Ticket | null>(null);
   comments = signal<TicketComment[]>([]);
+  /** departments working on the ticket (empty = ordinary ticket) */
+  parts = signal<TicketPart[]>([]);
   teamMembers = signal<UserProfile[]>([]);
   loading = signal(true);
   sending = signal(false);
@@ -93,6 +96,7 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
       this.ticket.set(ticket);
       this.comments.set(comments);
       this.syncEditFields();
+      await this.loadParts();
 
       this.commentsChannel = this.ticketSvc.subscribeToComments(id, (comment) => {
         if (comment.author_id !== this.auth.getCurrentUserId()) {
@@ -109,6 +113,7 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
         }
         this.ticket.update(t => t ? { ...t, ...updated } : updated);
         this.syncEditFields();
+        this.loadParts();   // a department's part may be what changed
       });
     } catch (err) {
       // e.g. a team member whose ticket was re-assigned to someone else
@@ -119,6 +124,37 @@ export class AdminTicketDetailComponent implements OnInit, OnDestroy {
       this.loading.set(false);
     }
   }
+
+  async loadParts() {
+    const t = this.ticket();
+    if (!t) return;
+    try { this.parts.set(await this.ticketSvc.getParts(t.id)); } catch { this.parts.set([]); }
+  }
+
+  /** After a department part changed: the ticket's overall status may have too. */
+  async onPartsChanged() {
+    const id = this.ticket()?.id;
+    if (!id) return;
+    try {
+      const t = await this.ticketSvc.getTicketById(id);
+      this.ticket.set(t);
+      this.syncEditFields();
+    } catch { /* keep what we have */ }
+    await this.loadParts();
+  }
+
+  get isShared(): boolean {
+    return this.parts().some(p => !p.is_lead);
+  }
+
+  /** IT admin and the IT member it is assigned to may share the ticket. */
+  get canManageParts(): boolean {
+    const t = this.ticket();
+    return !!t && (this.auth.isAdmin() || t.assigned_to_id === this.auth.getCurrentUserId());
+  }
+
+  readonly canEditPart = (p: TicketPart): boolean =>
+    this.auth.isAdmin() || (p.is_lead && this.ticket()?.assigned_to_id === this.auth.getCurrentUserId());
 
   private syncEditFields() {
     const t = this.ticket();

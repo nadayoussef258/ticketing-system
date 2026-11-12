@@ -43,13 +43,6 @@
             </div>
           </div>
 
-          <div class="col-12" *ngIf="needsDepartment">
-            <label class="form-label-custom" for="department">{{ 'common.department' | t }} <span class="required-star">*</span></label>
-            <select id="department" class="form-input" [(ngModel)]="form.department_id" name="department_id" required>
-              <option value="" disabled>{{ 'newTicket.selectDepartment' | t }}</option>
-              <option *ngFor="let d of departments()" [value]="d.id">{{ deptSvc.label(d) }}</option>
-            </select>
-          </div>
         </div>
 
         <div class="mb-4">
@@ -89,6 +82,21 @@
             required minlength="10" #descField="ngModel"></textarea>
           <div class="field-error-inline" *ngIf="descField.dirty && form.description.length > 0 && form.description.length < 10">
             {{ 'newTicket.descriptionMin' | t }}
+          </div>
+        </div>
+
+        <div class="mb-4" *ngIf="form.to_department_id && shareOptions.length">
+          <label class="form-label-custom">{{ 'parts.formTitle' | t }}</label>
+          <p class="share-hint">{{ 'parts.formHint' | t }}</p>
+          <div class="share-list">
+            <div class="share-item" *ngFor="let d of shareOptions" [class.on]="share[d.id]?.on" [style.--dept-color]="d.color">
+              <label class="share-check">
+                <input type="checkbox" [checked]="share[d.id]?.on" (change)="toggleShare(d.id)" />
+                <span class="target-dot"></span><span dir="auto">{{ sdSvc.label(d) }}</span>
+              </label>
+              <input *ngIf="share[d.id]?.on" type="text" class="form-input share-role" dir="auto" maxlength="500"
+                     [name]="'role_' + d.id" [(ngModel)]="share[d.id].role" [placeholder]="'parts.rolePh' | t" />
+            </div>
           </div>
         </div>
 

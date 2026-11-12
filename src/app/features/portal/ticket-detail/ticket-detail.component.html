@@ -9,7 +9,7 @@
     </div>
 
     <div *ngIf="loading()" class="text-center py-5">
-      <div class="spinner-border" style="color:#4f46e5;"></div>
+      <div class="spinner-border" style="color:#19587b;"></div>
     </div>
 
     <div *ngIf="!loading() && notFound()" class="info-card p-5 text-center">
@@ -36,8 +36,12 @@
         <div class="requester-line">
           <span><i class="bi bi-hash"></i><bdi>{{ ticket()!.ticket_number }}</bdi></span>
           <span><i class="bi bi-person"></i><bdi>{{ ticket()!.requester_name }}</bdi></span>
-          <span *ngIf="ticket()!.department"><i class="bi bi-diagram-3"></i>{{ deptSvc.label(ticket()!.department) }}</span>
           <span *ngIf="ticket()!.to_department"><i class="bi bi-send"></i>{{ 'detail.sentTo' | t }}: <bdi>{{ handlerLabel }}</bdi></span>
+        </div>
+
+        <div class="stop-banner mt-3" *ngIf="ticket()!.status === 'closed' && ticket()!.status_reason">
+          <i class="bi bi-pause-circle"></i>
+          <div><strong>{{ 'detail.stoppedBecause' | t }}</strong> <span dir="auto">{{ ticket()!.status_reason }}</span></div>
         </div>
 
         <div class="archive-row mt-3" *ngIf="ticket()!.archived_at || canArchive">
@@ -54,6 +58,8 @@
         </div>
         <div class="file-error" *ngIf="archiveError()">{{ archiveError() }}</div>
       </div>
+
+      <app-ticket-parts *ngIf="parts().length" [ticket]="ticket()!" [parts]="parts()" />
 
       <div class="info-card p-4 mb-3">
         <div class="section-label">{{ 'detail.conversation' | t }}</div>

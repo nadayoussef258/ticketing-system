@@ -63,8 +63,8 @@
 }
 .form-input:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+  border-color: #19587b;
+  box-shadow: 0 0 0 3px rgba(25,88,123,0.12);
 }
 
 textarea.form-input {
@@ -99,9 +99,9 @@ textarea.form-input {
   transition: all .15s;
 }
 .file-drop:hover {
-  border-color: #4f46e5;
-  color: #4f46e5;
-  background: #f5f5ff;
+  border-color: #19587b;
+  color: #19587b;
+  background: #eef5f9;
 }
 
 .file-error {
@@ -152,7 +152,7 @@ textarea.form-input {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #4f46e5;
+  background: #19587b;
   color: #fff;
   border: none;
   padding: 11px 22px;
@@ -163,7 +163,7 @@ textarea.form-input {
   transition: background .15s;
 }
 .btn-submit:hover:not(:disabled) {
-  background: #4338ca;
+  background: #11425e;
 }
 .btn-submit:disabled {
   opacity: 0.6;
@@ -193,14 +193,14 @@ textarea.form-input {
   gap: 8px;
 }
 .target-option {
-  --dept-color: #4f46e5;
+  --dept-color: #19587b;
   position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 11px 14px;
   background: #f9fafb;
-  border: 1px solid #e4e6ef;
+  border: 1px solid #e1e7ec;
   border-radius: 10px;
   cursor: pointer;
   font-size: 0.86rem;
@@ -208,9 +208,9 @@ textarea.form-input {
   color: #374151;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.target-option:hover { background: #fff; border-color: #c7d2fe; }
+.target-option:hover { background: #fff; border-color: #b6d1e0; }
 .target-option input { position: absolute; opacity: 0; pointer-events: none; }
-.target-option:focus-within { box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.target-option:focus-within { box-shadow: 0 0 0 3px rgba(25,88,123,0.15); }
 .target-option.selected {
   background: #fff;
   border-color: var(--dept-color);
@@ -223,3 +223,11 @@ textarea.form-input {
   background: var(--dept-color);
 }
 .target-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ---- Other departments taking part ---- */
+.share-hint { font-size: 0.8rem; color: #6b7280; margin: -2px 0 10px; }
+.share-list { display: flex; flex-direction: column; gap: 8px; }
+.share-item { --dept-color: #19587b; border: 1px solid #e1e7ec; border-radius: 10px; padding: 10px 14px; background: #f9fafb; }
+.share-item.on { background: #fff; border-color: var(--dept-color); box-shadow: 0 0 0 1px var(--dept-color) inset; }
+.share-check { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; font-weight: 600; color: #374151; cursor: pointer; margin: 0; }
+.share-check input { width: 16px; height: 16px; accent-color: #19587b; }
+.share-role { margin-top: 10px; }

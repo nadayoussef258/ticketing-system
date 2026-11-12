@@ -102,6 +102,22 @@ export type TicketPriority = 'low' | 'medium' | 'high' | 'critical';
  *  open = جديدة · in_progress = قيد التنفيذ · in_review = في المراجعة · closed = متوقفة (needs a reason) · resolved = مكتملة */
 export type TicketStatus   = 'open' | 'in_progress' | 'in_review' | 'resolved' | 'closed';
 
+/** One department's part of a shared ticket (table: ticket_parts). No rows = ordinary ticket. */
+export interface TicketPart {
+  id: string;
+  ticket_id: string;
+  department_id: string;
+  is_lead: boolean;            // the responsible (receiving) department
+  role_note: string | null;    // what this department does
+  status: TicketStatus;
+  status_reason: string | null;
+  added_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  department?: Pick<ServiceDepartment, 'id' | 'code' | 'name_ar' | 'name_en' | 'color'> | null;
+}
+
 export interface TicketComment {
   id: string;
   ticket_id: string;

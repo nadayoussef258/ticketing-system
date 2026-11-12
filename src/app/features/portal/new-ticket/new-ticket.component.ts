@@ -7,10 +7,9 @@ import { TranslationService } from '../../../core/i18n/translation.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { DepartmentService } from '../../../core/services/Department.service';
 import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { NavbarComponent } from '../../../shared components/navbar/navbar.component';
-import { Department, Ticket, TicketCategory, TicketPriority } from '../../../core/models';
+import { Ticket, TicketCategory, TicketPriority } from '../../../core/models';
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 
@@ -37,7 +36,6 @@ export class NewTicketComponent implements OnInit {
   form: {
     to_department_id: string;
     requester_name: string;
-    department_id: string;
     subject: string;
     description: string;
     priority: TicketPriority;
@@ -45,7 +43,6 @@ export class NewTicketComponent implements OnInit {
   } = {
     to_department_id: '',
     requester_name: '',   // shared accounts: the person types their name every time
-    department_id: '',
     subject: '',
     description: '',
     priority: 'medium',
@@ -66,9 +63,26 @@ export class NewTicketComponent implements OnInit {
   readonly targets = computed(() =>
     this.sdSvc.targets(this.mode() === 'client' ? [] : [this.myDepartmentId()]));
 
-  departments = signal<Department[]>([]);
-  departmentsLoading = signal(true);
   targetsLoading = signal(true);
+
+  /** Other departments that work on the ticket too (optional): id → their part */
+  share: Record<string, { on: boolean; role: string }> = {};
+
+  /** Departments that can take a part: not the receiver, not the sender. */
+  get shareOptions() {
+    return this.sdSvc.targets([this.form.to_department_id, this.myDepartmentId()]);
+  }
+
+  private get sharedParts(): { id: string; role: string }[] {
+    return this.shareOptions
+      .filter(d => this.share[d.id]?.on)
+      .map(d => ({ id: d.id, role: (this.share[d.id]?.role ?? '').trim() }));
+  }
+
+  toggleShare(id: string) {
+    const cur = this.share[id] ?? { on: false, role: '' };
+    this.share[id] = { ...cur, on: !cur.on };
+  }
 
   selectedFiles: File[] = [];
   fileError = signal('');
@@ -77,7 +91,6 @@ export class NewTicketComponent implements OnInit {
 
   constructor(
     public auth: AuthService,
-    public deptSvc: DepartmentService,
     public sdSvc: ServiceDepartmentService,
     private ticketSvc: TicketService,
     private supabase: SupabaseService,
@@ -99,17 +112,6 @@ export class NewTicketComponent implements OnInit {
       console.warn('Could not load departments:', err);
     } finally {
       this.targetsLoading.set(false);
-    }
-
-    // The requester's own department inside a client project
-    const projectId = this.mode() === 'client' ? user?.project_id : null;
-    if (!projectId) { this.departmentsLoading.set(false); return; }
-    try {
-      this.departments.set(await this.deptSvc.listByProject(projectId, true));
-    } catch (err) {
-      console.warn('Could not load project departments:', err);
-    } finally {
-      this.departmentsLoading.set(false);
     }
   }
 
@@ -142,11 +144,6 @@ export class NewTicketComponent implements OnInit {
     if (!this.categories.some(c => c.code === this.form.category)) this.form.category = 'other';
   }
 
-  /** Project department is required only when the project has departments set up. */
-  get needsDepartment(): boolean {
-    return this.mode() === 'client' && this.departments().length > 0;
-  }
-
   get canSubmit(): boolean {
     const f = this.form;
     return f.requester_name.trim().length >= 2
@@ -154,9 +151,8 @@ export class NewTicketComponent implements OnInit {
       && this.categories.some(c => c.code === f.category)
       && f.subject.trim().length >= 5
       && f.description.trim().length >= 10
-      && (!this.needsDepartment || !!f.department_id)
+      && this.sharedParts.every(p => p.role.length > 0)
       && !this.loading()
-      && !this.departmentsLoading()
       && !this.targetsLoading();
   }
 
@@ -239,13 +235,18 @@ export class NewTicketComponent implements OnInit {
       };
       if (mode === 'client') {
         payload.project_id = user.project_id;
-        payload.department_id = this.form.department_id || null;
       } else {
         payload.project_id = null;
         payload.from_department_id = this.myDepartmentId();
       }
 
       const ticket = await this.ticketSvc.createTicket(payload, user.id);
+
+      // shared from the start: each extra department with its part
+      for (const p of this.sharedParts) {
+        try { await this.ticketSvc.addPart(ticket.id, p.id, p.role); }
+        catch (err) { console.warn('Could not share with a department:', err); }
+      }
 
       const base = mode === 'admin' ? '/admin/ticket' : mode === 'dept' ? '/dept/ticket' : '/portal/ticket';
       this.router.navigate([base, ticket.id]);

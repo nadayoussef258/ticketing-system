@@ -22,7 +22,7 @@ export class DeptDashboardComponent implements OnInit {
   tickets = signal<Ticket[]>([]);
   loading = signal(true);
 
-  box = signal<'inbox' | 'sent'>('inbox');
+  box = signal<'inbox' | 'sent' | 'shared'>('inbox');
   view = signal<'active' | 'archived'>('active');
 
   readonly deptId = computed(() => this.auth.user()?.service_department_id ?? null);
@@ -72,7 +72,7 @@ export class DeptDashboardComponent implements OnInit {
     await this.notificationSvc.init();
   }
 
-  async setBox(b: 'inbox' | 'sent') {
+  async setBox(b: 'inbox' | 'sent' | 'shared') {
     if (this.box() === b) return;
     this.box.set(b);
     await this.load();
@@ -86,12 +86,12 @@ export class DeptDashboardComponent implements OnInit {
 
   /** Where the ticket came from (inbox) or where it went (sent). */
   counterpart(t: Ticket): string {
-    if (this.box() === 'sent') return this.sdSvc.label(t.to_department);
+    if (this.box() === 'sent' || this.box() === 'shared') return this.sdSvc.label(t.to_department);
     return t.from_department ? this.sdSvc.label(t.from_department) : (t.project_name ?? t.projects?.name ?? '');
   }
 
   counterpartColor(t: Ticket): string {
-    const d = this.box() === 'sent' ? t.to_department : t.from_department;
+    const d = this.box() === 'inbox' ? t.from_department : t.to_department;
     return d?.color ?? t.projects?.color ?? '#9ca3af';
   }
 
@@ -99,9 +99,11 @@ export class DeptDashboardComponent implements OnInit {
     const deptId = this.deptId();
     this.loading.set(true);
     try {
-      this.tickets.set(deptId
-        ? await this.ticketSvc.getDepartmentTickets(deptId, this.box(), this.view() === 'archived')
-        : []);
+      const archived = this.view() === 'archived';
+      const box = this.box();
+      this.tickets.set(!deptId ? []
+        : box === 'shared' ? await this.ticketSvc.getSharedTickets(deptId, archived)
+        : await this.ticketSvc.getDepartmentTickets(deptId, box, archived));
     } catch (err) {
       console.error('Failed to load tickets:', err);
       this.tickets.set([]);

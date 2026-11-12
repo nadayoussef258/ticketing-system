@@ -68,12 +68,6 @@
         <option value="all">{{ 'filter.allTargets' | t }}</option>
         <option *ngFor="let d of sdSvc.departments()" [value]="d.id">{{ sdSvc.label(d) }}</option>
       </select>
-      <select class="filter-select" *ngIf="departmentOptions().length"
-              [ngModel]="filterDepartment()" (ngModelChange)="filterDepartment.set($event)"
-              [attr.aria-label]="'common.department' | t">
-        <option value="all">{{ 'filter.allDepartments' | t }}</option>
-        <option *ngFor="let d of departmentOptions()" [value]="d.id">{{ d.label }}</option>
-      </select>
       <select class="filter-select" *ngIf="auth.isAdmin()"
               [ngModel]="filterAssignee()" (ngModelChange)="filterAssignee.set($event)"
               [attr.aria-label]="'common.assignedTo' | t">
@@ -121,7 +115,10 @@
                   <span *ngIf="isNew(ticket)" class="new-flash">{{ 'dash.new' | t }}</span>
                 </div>
                 <div class="ticket-sub">
-                  <bdi>{{ ticket.ticket_number }}</bdi> · <bdi>{{ ticket.requester_name }}</bdi><ng-container *ngIf="ticket.department"> · <bdi>{{ deptSvc.label(ticket.department) }}</bdi></ng-container>
+                  <bdi>{{ ticket.ticket_number }}</bdi> · <bdi>{{ ticket.requester_name }}</bdi>
+                  <span class="shared-chip" *ngIf="shared().get(ticket.id) as sh">
+                    <i class="bi bi-diagram-3"></i>{{ 'parts.sharedBadge' | t: { done: sh.done, total: sh.total } }}
+                  </span>
                 </div>
               </td>
               <td class="td-org">

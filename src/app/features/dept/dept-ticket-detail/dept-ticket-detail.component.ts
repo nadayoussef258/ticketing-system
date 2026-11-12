@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ticket, TicketComment, TicketStatus, ServiceDepartment } from '../../../core/models';
+import { Ticket, TicketComment, TicketPart, TicketStatus, ServiceDepartment } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { ServiceDepartmentService } from '../../../core/services/service-department.service';
@@ -16,6 +16,7 @@ import { NavbarComponent } from '../../../shared components/navbar/navbar.compon
 import { PriorityBadgeComponent } from '../../../shared components/priority-badge/priority-badge.component';
 import { StatusBadgeComponent } from '../../../shared components/status-badge/status-badge.component';
 import { TransferDialogComponent } from '../../../shared components/transfer-dialog/transfer-dialog.component';
+import { TicketPartsComponent } from '../../../shared components/ticket-parts/ticket-parts.component';
 
 /**
  * Ticket page for a department account.
@@ -25,7 +26,7 @@ import { TransferDialogComponent } from '../../../shared components/transfer-dia
 @Component({
   selector: 'app-dept-ticket-detail',
   imports: [RouterLink, FormsModule, NgFor, NgIf, TranslatePipe, TranslateDatePipe, NavbarComponent,
-            PriorityBadgeComponent, StatusBadgeComponent, TransferDialogComponent],
+            PriorityBadgeComponent, StatusBadgeComponent, TransferDialogComponent, TicketPartsComponent],
   templateUrl: './dept-ticket-detail.component.html',
   styleUrls: ['../../portal/ticket-detail/ticket-detail.component.css', './dept-ticket-detail.component.css'],
 })
@@ -35,6 +36,8 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
 
   ticket = signal<Ticket | null>(null);
   comments = signal<TicketComment[]>([]);
+  /** departments working on the ticket (empty = ordinary ticket) */
+  parts = signal<TicketPart[]>([]);
   loading = signal(true);
   notFound = signal(false);
 
@@ -62,15 +65,21 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
   readonly myDeptId = computed(() => this.auth.user()?.service_department_id ?? null);
   readonly deptName = computed(() => this.sdSvc.label(this.auth.user()?.service_department));
 
-  /** 'inbox' = sent TO my department, 'sent' = sent FROM my department. */
-  readonly side = computed<'inbox' | 'sent' | null>(() => {
+  /** 'inbox' = sent TO my department, 'sent' = sent FROM it, 'part' = shared with it. */
+  readonly side = computed<'inbox' | 'sent' | 'part' | null>(() => {
     const t = this.ticket();
     const mine = this.myDeptId();
     if (!t || !mine) return null;
     if (t.to_department_id === mine) return 'inbox';
     if (t.from_department_id === mine) return 'sent';
+    if (this.parts().some(p => p.department_id === mine)) return 'part';
     return null;
   });
+
+  readonly isShared = computed(() => this.parts().some(p => !p.is_lead));
+
+  /** My department updates its own part; the responsible one manages who takes part. */
+  readonly canEditPart = (p: TicketPart): boolean => p.department_id === this.myDeptId();
 
   constructor(
     public auth: AuthService,
@@ -106,6 +115,7 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
         this.ticketSvc.getComments(id),
       ]);
       this.ticket.set(ticket);
+      await this.loadParts();
       this.statusDraft = ticket?.status ?? 'open';
       this.reasonDraft = ticket?.status_reason ?? '';
       this.comments.set(comments);
@@ -124,6 +134,7 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
           return;
         }
         this.ticket.update(t => t ? { ...t, ...updated } : t);
+        this.loadParts();   // a department's part may be what changed
         if (!this.savingStatus()) {
           this.statusDraft = updated.status;
           this.reasonDraft = updated.status_reason ?? '';
@@ -144,6 +155,24 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
     this.commentsChannel = this.ticketChannel = null;
   }
 
+  async loadParts() {
+    const t = this.ticket();
+    if (!t) return;
+    try { this.parts.set(await this.ticketSvc.getParts(t.id)); } catch { this.parts.set([]); }
+  }
+
+  async onPartsChanged() {
+    const id = this.ticket()?.id;
+    if (!id) return;
+    try {
+      const t = await this.ticketSvc.getTicketById(id);
+      this.ticket.set(t);
+      this.statusDraft = t?.status ?? 'open';
+      this.reasonDraft = t?.status_reason ?? '';
+    } catch { /* keep what we have */ }
+    await this.loadParts();
+  }
+
   // ===== Display helpers =====
 
   /** Who opened it: a client project or another department. */
@@ -158,6 +187,7 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
   get canReply(): boolean {
     const t = this.ticket();
     if (!t) return false;
+    if (this.side() === 'part') return t.status !== 'resolved';
     return this.side() === 'inbox' ? t.status !== 'closed' : (t.status !== 'closed' && t.status !== 'resolved');
   }
 
@@ -281,7 +311,7 @@ export class DeptTicketDetailComponent implements OnInit, OnDestroy {
       const attachments = this.replyFiles.length ? await this.uploadReplyAttachments(ticket.id) : [];
       // is_agent_reply is decided by the database (receiving side = true)
       const comment = await this.ticketSvc.addComment(
-        ticket.id, this.replyText.trim(), this.side() === 'inbox', user.full_name, user.id, attachments
+        ticket.id, this.replyText.trim(), this.side() !== 'sent', user.full_name, user.id, attachments
       );
       this.comments.update(c => [...c, comment]);
       this.replyText = '';

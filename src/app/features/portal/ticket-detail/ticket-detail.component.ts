@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { Ticket, TicketComment } from '../../../core/models';
+import { Ticket, TicketComment, TicketPart } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DepartmentService } from '../../../core/services/Department.service';
@@ -15,10 +15,11 @@ import { NavbarComponent } from '../../../shared components/navbar/navbar.compon
 import { PriorityBadgeComponent } from '../../../shared components/priority-badge/priority-badge.component';
 import { StatusBadgeComponent } from '../../../shared components/status-badge/status-badge.component';
 import { NotificationService } from '../../../core/services/notification.service';
+import { TicketPartsComponent } from '../../../shared components/ticket-parts/ticket-parts.component';
 
 @Component({
   selector: 'app-ticket-detail',
-  imports: [RouterLink, FormsModule, NgFor, NgIf, TranslatePipe, TranslateDatePipe, NavbarComponent, PriorityBadgeComponent, StatusBadgeComponent],
+  imports: [RouterLink, FormsModule, NgFor, NgIf, TranslatePipe, TranslateDatePipe, NavbarComponent, PriorityBadgeComponent, StatusBadgeComponent, TicketPartsComponent],
   templateUrl: './ticket-detail.component.html',
   styleUrls: ['./ticket-detail.component.css']
 })
@@ -26,6 +27,8 @@ export class PortalTicketDetailComponent implements OnInit, OnDestroy {
 
   ticket = signal<Ticket | null>(null);
   comments = signal<TicketComment[]>([]);
+  /** departments working on the ticket (read-only here) */
+  parts = signal<TicketPart[]>([]);
   loading = signal(true);
   sending = signal(false);
   replyText = '';
@@ -70,6 +73,7 @@ export class PortalTicketDetailComponent implements OnInit, OnDestroy {
       ]);
       this.ticket.set(ticket);
       this.comments.set(comments);
+      this.ticketSvc.getParts(id).then(p => this.parts.set(p)).catch(() => this.parts.set([]));
       await this.notificationSvc.markTicketNotificationsRead(id);
       const currentUserId = this.auth.getCurrentUserId();
 
@@ -86,6 +90,7 @@ export class PortalTicketDetailComponent implements OnInit, OnDestroy {
           return;
         }
         this.ticket.update(t => t ? { ...t, ...updated } : updated);
+        this.ticketSvc.getParts(id).then(p => this.parts.set(p)).catch(() => {});
       });
     } catch (err) {
       console.warn('Ticket not available:', err);

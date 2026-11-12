@@ -8,7 +8,6 @@ import { Ticket, UserProfile } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { TeamService } from '../../../core/services/team.service';
-import { DepartmentService } from '../../../core/services/Department.service';
 import { ServiceDepartmentService } from '../../../core/services/service-department.service';
 import { NavbarComponent } from '../../../shared components/navbar/navbar.component';
 import { PriorityBadgeComponent } from '../../../shared components/priority-badge/priority-badge.component';
@@ -37,18 +36,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   filterAssignee = signal<string>('all');
   staff = signal<UserProfile[]>([]);
 
-  /** 'all' | <project department id> — options come from the loaded tickets */
-  filterDepartment = signal<string>('all');
-  departmentOptions = computed(() => {
-    const map = new Map<string, { id: string; label: string }>();
-    for (const t of this.tickets()) {
-      if (t.department && !map.has(t.department.id)) {
-        const project = t.projects?.code ? `${t.projects.code} · ` : '';
-        map.set(t.department.id, { id: t.department.id, label: project + this.deptSvc.label(t.department) });
-      }
-    }
-    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
-  });
+  /** Shared tickets: ticket id → parts done / total */
+  shared = signal<Map<string, { done: number; total: number }>>(new Map());
 
   /** NEW: 'all' | <receiving department id> (IT, Finance, Marketing…) */
   filterTarget = signal<string>('all');
@@ -63,8 +52,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (this.filterPriority() !== 'all') list = list.filter(t => t.priority === this.filterPriority());
     const target = this.filterTarget();
     if (target !== 'all') list = list.filter(t => t.to_department_id === target);
-    const d = this.filterDepartment();
-    if (d !== 'all') list = list.filter(t => t.department?.id === d);
     const a = this.filterAssignee();
     if (a === 'unassigned') list = list.filter(t => !t.assigned_to_id);
     else if (a !== 'all') list = list.filter(t => t.assigned_to_id === a);
@@ -103,7 +90,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     private ticketSvc: TicketService,
     private teamSvc: TeamService,
-    public deptSvc: DepartmentService,
     public sdSvc: ServiceDepartmentService,
   ) {}
 
@@ -144,13 +130,28 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private async load() {
     this.loading.set(true);
     try {
-      this.tickets.set(await this.ticketSvc.getAllTickets(this.view() === 'archived'));
+      const list = await this.ticketSvc.getAllTickets(this.view() === 'archived');
+      this.tickets.set(list);
+      this.loadShared(list.map(t => t.id));
     } catch (err) {
       console.error('Failed to load tickets:', err);
       this.tickets.set([]);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private async loadShared(ids: string[]) {
+    try {
+      const map = new Map<string, { done: number; total: number }>();
+      for (const p of await this.ticketSvc.getPartsFor(ids)) {
+        const e = map.get(p.ticket_id) ?? { done: 0, total: 0 };
+        e.total++;
+        if (p.status === 'resolved') e.done++;
+        map.set(p.ticket_id, e);
+      }
+      this.shared.set(map);
+    } catch { this.shared.set(new Map()); }
   }
 
   ngOnDestroy() {

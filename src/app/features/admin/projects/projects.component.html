@@ -56,7 +56,7 @@
 
     <!-- Loading -->
     <div *ngIf="loading()" class="text-center py-5">
-      <div class="spinner-border" style="color:#4f46e5;"></div>
+      <div class="spinner-border" style="color:#19587b;"></div>
     </div>
 
     <!-- Projects grid -->
@@ -80,16 +80,10 @@
             <h3 class="project-name" dir="auto">{{ project.name }}</h3>
             <p class="project-desc" *ngIf="project.description" dir="auto">{{ project.description }}</p>
             <div class="project-meta">
-              <span class="meta-chip">
-                <i class="bi bi-diagram-3 me-1"></i>{{ 'projects.deptCount' | t: { n: deptCounts()[project.id] ?? 0 } }}
-              </span>
               <span class="meta-chip text-muted">{{ project.created_at | tdate: 'monthYear' }}</span>
             </div>
           </div>
           <div class="project-actions">
-            <button class="action-btn" [title]="'projects.departments' | t" (click)="openDepartments(project)">
-              <i class="bi bi-diagram-3"></i>
-            </button>
             <button class="action-btn" [title]="'projects.addAccount' | t" (click)="openAddAdmin(project)">
               <i class="bi bi-person-plus"></i>
             </button>
@@ -201,79 +195,6 @@
         <span *ngIf="deleting()" class="spinner-border spinner-border-sm me-1"></span>{{ 'common.delete' | t }}
       </button>
       <button class="btn-secondary" (click)="deleteTarget.set(null)">{{ 'common.cancel' | t }}</button>
-    </div>
-  </div>
-</div>
-
-<!-- Departments modal -->
-<div class="modal-overlay" *ngIf="deptTarget()" (click)="closeDepartments()">
-  <div class="modal-box dept-modal" (click)="$event.stopPropagation()">
-    <div class="d-flex align-items-start justify-content-between gap-3 mb-1">
-      <p class="modal-title">{{ 'projects.departments' | t }} — <strong>{{ deptTarget()?.name }}</strong></p>
-      <button type="button" class="dept-close" (click)="closeDepartments()" [attr.aria-label]="'common.close' | t"><i class="bi bi-x-lg"></i></button>
-    </div>
-    <p class="field-hint mb-3">{{ 'dept.hint' | t }}</p>
-
-    <!-- Add -->
-    <div class="dept-add">
-      <input type="text" class="field-input" dir="rtl" lang="ar" [placeholder]="'dept.arPh' | t"
-             [(ngModel)]="newDept.name_ar" (keyup.enter)="addDepartment()" maxlength="100" />
-      <input type="text" class="field-input" [placeholder]="'dept.enPh' | t"
-             [(ngModel)]="newDept.name_en" (keyup.enter)="addDepartment()" maxlength="100" />
-      <button class="btn-primary" (click)="addDepartment()" [disabled]="deptBusy() || !canAddDept()">
-        <i class="bi bi-plus-lg me-1"></i>{{ 'common.add' | t }}
-      </button>
-    </div>
-
-    <div class="dept-msg dept-error" *ngIf="deptError()"><i class="bi bi-x-circle me-1"></i>{{ deptError() }}</div>
-    <div class="dept-msg dept-info" *ngIf="deptInfo()"><i class="bi bi-info-circle me-1"></i>{{ deptInfo() }}</div>
-
-    <!-- List -->
-    <div *ngIf="deptLoading()" class="text-center py-4">
-      <div class="spinner-border spinner-border-sm" style="color:#4f46e5;"></div>
-    </div>
-
-    <div class="dept-empty" *ngIf="!deptLoading() && departments().length === 0">
-      <i class="bi bi-diagram-3"></i>
-      <p>{{ 'dept.empty' | t }}</p>
-    </div>
-
-    <ul class="dept-list" *ngIf="!deptLoading() && departments().length > 0">
-      <li *ngFor="let d of departments()" class="dept-row" [class.inactive]="!d.is_active">
-        <ng-container *ngIf="editingDeptId() !== d.id; else editRow">
-          <div class="dept-names">
-            <span class="dept-ar" dir="auto" lang="ar">{{ d.name_ar }}</span>
-            <span class="dept-en">{{ d.name_en }}</span>
-          </div>
-          <span class="dept-badge" *ngIf="!d.is_active">{{ 'common.inactive' | t }}</span>
-          <div class="dept-actions">
-            <button class="action-btn" [title]="'common.edit' | t" (click)="startDeptEdit(d)" [disabled]="deptBusy()">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="action-btn" [title]="(d.is_active ? 'common.deactivate' : 'common.activate') | t" (click)="toggleDeptActive(d)" [disabled]="deptBusy()">
-              <i class="bi" [class.bi-toggle-on]="d.is_active" [class.bi-toggle-off]="!d.is_active"
-                 [style.color]="d.is_active ? '#059669' : '#9ca3af'"></i>
-            </button>
-            <button class="action-btn danger" [title]="'common.delete' | t" (click)="deleteDepartment(d)" [disabled]="deptBusy()">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
-        </ng-container>
-
-        <ng-template #editRow>
-          <div class="dept-edit">
-            <input type="text" class="field-input" dir="rtl" lang="ar" [(ngModel)]="editDept.name_ar" maxlength="100" />
-            <input type="text" class="field-input" [(ngModel)]="editDept.name_en" maxlength="100"
-                   (keyup.enter)="saveDeptEdit(d)" />
-            <button class="btn-primary" (click)="saveDeptEdit(d)" [disabled]="deptBusy()">{{ 'common.save' | t }}</button>
-            <button class="btn-secondary" (click)="editingDeptId.set(null)">{{ 'common.cancel' | t }}</button>
-          </div>
-        </ng-template>
-      </li>
-    </ul>
-
-    <div class="d-flex justify-content-end mt-3">
-      <button class="btn-secondary" (click)="closeDepartments()">{{ 'common.done' | t }}</button>
     </div>
   </div>
 </div>

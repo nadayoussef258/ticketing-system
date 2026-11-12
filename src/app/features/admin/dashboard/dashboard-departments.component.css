@@ -24,3 +24,9 @@
 }
 
 [dir="rtl"] .flip-rtl { transform: scaleX(-1); }
+/* Shared ticket: parts done / total */
+.shared-chip {
+  display: inline-flex; align-items: center; gap: 4px; margin-inline-start: 6px;
+  padding: 0 8px; border-radius: 99px; font-size: 0.68rem; font-weight: 600;
+  color: #19587b; background: #e9f2f7; border: 1px solid #b6d1e0;
+}

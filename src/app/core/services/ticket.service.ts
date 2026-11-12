@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { Ticket, TicketComment } from '../models';
+import { Ticket, TicketComment, TicketPart, TicketStatus } from '../models';
 
 /** Joined data every ticket screen needs. */
 const DEPT_JOINS =
@@ -113,6 +113,64 @@ export class TicketService {
       .update({ assigned_to_id: assigneeId, updated_at: new Date().toISOString() })
       .eq('id', ticketId);
     if (error) throw error;
+  }
+
+  // ===== Shared tickets: department parts =====
+
+  async getParts(ticketId: string): Promise<TicketPart[]> {
+    const { data, error } = await this.supabase.client
+      .from('ticket_parts')
+      .select('*, department:service_departments(id, code, name_ar, name_en, color)')
+      .eq('ticket_id', ticketId)
+      .order('is_lead', { ascending: false })
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as TicketPart[];
+  }
+
+  /** Parts of many tickets at once (lists: "shared 1/3" badges). */
+  async getPartsFor(ticketIds: string[]): Promise<Pick<TicketPart, 'ticket_id' | 'status' | 'is_lead'>[]> {
+    if (!ticketIds.length) return [];
+    const { data, error } = await this.supabase.client
+      .from('ticket_parts').select('ticket_id, status, is_lead').in('ticket_id', ticketIds);
+    if (error) throw error;
+    return (data ?? []) as any;
+  }
+
+  async addPart(ticketId: string, departmentId: string, role: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('ticket_add_part', {
+      p_ticket_id: ticketId, p_department_id: departmentId, p_role: role,
+    });
+    if (error) throw error;
+  }
+
+  async setPartStatus(partId: string, status: TicketStatus, reason: string | null): Promise<void> {
+    const { error } = await this.supabase.client.rpc('ticket_set_part_status', {
+      p_part_id: partId, p_status: status, p_reason: reason,
+    });
+    if (error) throw error;
+  }
+
+  async removePart(partId: string): Promise<void> {
+    const { error } = await this.supabase.client.rpc('ticket_remove_part', { p_part_id: partId });
+    if (error) throw error;
+  }
+
+  /** Department account: tickets another department shared with it. */
+  async getSharedTickets(departmentId: string, archived = false): Promise<Ticket[]> {
+    const { data: rows, error: pErr } = await this.supabase.client
+      .from('ticket_parts').select('ticket_id').eq('department_id', departmentId).eq('is_lead', false);
+    if (pErr) throw pErr;
+    const ids = (rows ?? []).map((r: any) => r.ticket_id);
+    if (!ids.length) return [];
+    let q = this.supabase.client
+      .from('tickets')
+      .select(`*, projects(name, color, code), ${DEPT_JOINS}`)
+      .in('id', ids);
+    q = archived ? q.not('archived_at', 'is', null) : q.is('archived_at', null);
+    const { data, error } = await q.order(archived ? 'archived_at' : 'created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Ticket[];
   }
 
   // ===== Comments (was replies) =====

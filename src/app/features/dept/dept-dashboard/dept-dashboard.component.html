@@ -28,6 +28,9 @@
         <button type="button" class="seg-tab" [class.active]="box() === 'sent'" (click)="setBox('sent')">
           <i class="bi bi-send"></i>{{ 'deptHome.sent' | t }}
         </button>
+        <button type="button" class="seg-tab" [class.active]="box() === 'shared'" (click)="setBox('shared')">
+          <i class="bi bi-diagram-3"></i>{{ 'deptHome.shared' | t }}
+        </button>
       </div>
       <div class="seg-tabs">
         <button type="button" class="seg-tab" [class.active]="view() === 'active'" (click)="setView('active')">
@@ -63,17 +66,22 @@
         <p>{{ 'portal.archiveHint' | t }}</p>
       </ng-container>
       <ng-template #activeEmpty>
-        <ng-container *ngIf="box() === 'inbox'; else sentEmpty">
+        <ng-container *ngIf="box() === 'shared'">
+          <i class="bi bi-diagram-3"></i>
+          <h6>{{ 'deptHome.emptyShared' | t }}</h6>
+          <p>{{ 'deptHome.emptySharedHint' | t }}</p>
+        </ng-container>
+        <ng-container *ngIf="box() === 'inbox'">
           <i class="bi bi-inbox"></i>
           <h6>{{ 'deptHome.emptyInbox' | t }}</h6>
           <p>{{ 'deptHome.emptyInboxHint' | t }}</p>
         </ng-container>
-        <ng-template #sentEmpty>
+        <ng-container *ngIf="box() === 'sent'">
           <i class="bi bi-send"></i>
           <h6>{{ 'deptHome.emptySent' | t }}</h6>
           <p>{{ 'deptHome.emptySentHint' | t }}</p>
           <a routerLink="/dept/new-ticket" class="btn-empty">{{ 'portal.openTicket' | t }}</a>
-        </ng-template>
+        </ng-container>
       </ng-template>
     </div>
 
@@ -86,7 +94,7 @@
         [class.has-reply]="isNewReply(ticket.id) || isNewTicket(ticket.id)"
       >
         <div class="ticket-icon-wrap">
-          <i class="bi" [class.bi-box-arrow-in-down]="box() === 'inbox'" [class.bi-box-arrow-up-right]="box() === 'sent'"></i>
+          <i class="bi" [class.bi-box-arrow-in-down]="box() === 'inbox'" [class.bi-box-arrow-up-right]="box() === 'sent'" [class.bi-diagram-3]="box() === 'shared'"></i>
         </div>
 
         <div class="flex-grow-1 min-w-0">
